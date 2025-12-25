@@ -37,4 +37,11 @@ export interface FilterState {
     city: string | null;
     university: string | null;
     department: string | null;
+    // New filters
+    minScore: number | null;
+    maxScore: number | null;
+    minRank: number | null;
+    maxRank: number | null;
+    sortBy: 'score' | 'rank' | 'quota' | 'year' | null;
+    sortOrder: 'asc' | 'desc';
 }

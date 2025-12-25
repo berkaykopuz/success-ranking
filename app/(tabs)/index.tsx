@@ -1,5 +1,6 @@
 import { FlashList } from '@shopify/flash-list';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import React, { useCallback } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +13,7 @@ import { RankingItem } from '../../src/types/ranking';
 export default function RankingScreen() {
   const insets = useSafeAreaInsets();
   const filters = useFilterStore();
+  const router = useRouter();
 
   const {
     data,
@@ -31,8 +33,8 @@ export default function RankingScreen() {
   const flattenData = data?.pages.flatMap((page) => page.data) || [];
 
   const renderItem = useCallback(({ item }: { item: RankingItem }) => (
-    <RankingCard item={item} />
-  ), []);
+    <RankingCard item={item} router={router} />
+  ), [router]);
 
   const renderFooter = useCallback(() => {
     if (isFetchingNextPage) {

@@ -14,6 +14,12 @@ const initialState: FilterState = {
     city: null,
     university: null,
     department: null,
+    minScore: null,
+    maxScore: null,
+    minRank: null,
+    maxRank: null,
+    sortBy: null,
+    sortOrder: 'desc',
 };
 
 export const useFilterStore = create<FilterStore>((set) => ({

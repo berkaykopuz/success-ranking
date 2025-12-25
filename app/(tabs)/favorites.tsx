@@ -7,13 +7,16 @@ import { RankingCard } from '../../src/components/RankingCard';
 import { useUserStore } from '../../src/store/userStore';
 import { RankingItem } from '../../src/types/ranking';
 
+import { useRouter } from 'expo-router';
+
 export default function FavoritesScreen() {
     const insets = useSafeAreaInsets();
     const favorites = useUserStore((state) => state.favorites);
+    const router = useRouter();
 
     const renderItem = useCallback(({ item }: { item: RankingItem }) => (
-        <RankingCard item={item} />
-    ), []);
+        <RankingCard item={item} router={router} />
+    ), [router]);
 
     const renderEmpty = () => (
         <View className="flex-1 justify-center items-center mt-20 px-10">

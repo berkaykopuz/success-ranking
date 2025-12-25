@@ -83,29 +83,65 @@ export const fetchRankings = async (
     let filtered = processedData;
 
     // Apply Filters
+    // Apply Filters
     if (filters.scoreType) {
         filtered = filtered.filter(item => item.scoreType === filters.scoreType);
     }
     if (filters.city) {
-        filtered = filtered.filter(item => item.city === filters.city);
+        const cityFilter = filters.city.toLocaleLowerCase('tr-TR');
+        filtered = filtered.filter(item => item.city.toLocaleLowerCase('tr-TR').includes(cityFilter));
     }
     if (filters.university) {
-        filtered = filtered.filter(item => item.universityName === filters.university);
+        const uniFilter = filters.university.toLocaleLowerCase('tr-TR');
+        filtered = filtered.filter(item => item.universityName.toLocaleLowerCase('tr-TR').includes(uniFilter));
     }
     if (filters.department) {
-        filtered = filtered.filter(item => item.departmentName === filters.department);
+        const deptFilter = filters.department.toLocaleLowerCase('tr-TR');
+        filtered = filtered.filter(item => item.departmentName.toLocaleLowerCase('tr-TR').includes(deptFilter));
     }
     if (filters.searchQuery) {
         filtered = filtered.filter(item => matchesSearch(item, filters.searchQuery));
     }
+    if (filters.minScore !== null) {
+        filtered = filtered.filter(item => item.score >= (filters.minScore as number));
+    }
+    if (filters.maxScore !== null) {
+        filtered = filtered.filter(item => item.score <= (filters.maxScore as number));
+    }
+    if (filters.minRank !== null) {
+        filtered = filtered.filter(item => item.rank >= (filters.minRank as number));
+    }
+    if (filters.maxRank !== null) {
+        filtered = filtered.filter(item => item.rank <= (filters.maxRank as number));
+    }
 
-    // Note: Don't sort here by score again unless we want to, 
-    // but usually 'Base Rank' is fixed. 
-    // However, the list should be presented in some order. 
-    // Ideally user wants to see highest scores first.
-    // The 'processedData' is NOT globally sorted, it was sorted in chunks during ranking.
-    // So we should sort the final filtered list by score descending to show top results.
-    filtered.sort((a, b) => b.score - a.score);
+    // Apply Sorting
+    // Default sort is Score Descending if nothing selected
+    const sortBy = filters.sortBy || 'score';
+    const sortOrder = filters.sortOrder || 'desc';
+
+    filtered.sort((a, b) => {
+        let valA: any = a[sortBy as keyof RankingItem];
+        let valB: any = b[sortBy as keyof RankingItem];
+
+        // Handle specific fields if needed, but score, rank, quota, year are all numbers
+        // except year is number.
+
+        if (typeof valA === 'string') {
+            valA = valA.toLocaleLowerCase('tr-TR');
+            valB = valB.toLocaleLowerCase('tr-TR');
+            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+            return 0;
+        } else {
+            // Numbers
+            if (sortOrder === 'asc') {
+                return valA - valB;
+            } else {
+                return valB - valA;
+            }
+        }
+    });
 
     // Pagination
     const limit = 20;
