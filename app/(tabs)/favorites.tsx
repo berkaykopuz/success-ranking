@@ -17,11 +17,11 @@ export default function FavoritesScreen() {
 
     const renderEmpty = () => (
         <View className="flex-1 justify-center items-center mt-20 px-10">
-            <View className="bg-blue-50 p-6 rounded-full mb-4">
-                <Heart size={40} color="#3B82F6" />
+            <View className="bg-slate-100 p-6 rounded-full mb-6 shadow-sm">
+                <Heart size={48} color="#94a3b8" />
             </View>
-            <Text className="text-xl font-bold text-gray-900 mb-2">Henüz favori yok</Text>
-            <Text className="text-gray-500 text-center text-base">
+            <Text className="text-xl font-bold text-slate-800 mb-3">Henüz favori yok</Text>
+            <Text className="text-slate-500 text-center text-base leading-relaxed max-w-[280px]">
                 Favori olarak işaretlediğiniz sıralamalar hızlı erişim için burada görünecektir.
             </Text>
         </View>
@@ -29,10 +29,10 @@ export default function FavoritesScreen() {
 
     return (
         <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
-            <View className="px-4 py-4 border-b border-gray-100">
-                <Text className="text-2xl font-bold text-gray-900">Favoriler</Text>
+            <View className="px-5 py-4 border-b border-slate-100">
+                <Text className="text-3xl font-bold text-slate-800 tracking-tight">Favoriler</Text>
             </View>
-            <View className="flex-1 bg-gray-50 pt-2">
+            <View className="flex-1 bg-slate-50 pt-3">
                 <FlashList
                     data={favorites}
                     renderItem={renderItem}

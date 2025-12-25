@@ -54,7 +54,7 @@ export default function RankingScreen() {
   return (
     <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
       <FilterBar />
-      <View className="flex-1 bg-gray-50 pt-2">
+      <View className="flex-1 bg-slate-50 pt-2">
         <FlashList
           data={flattenData}
           renderItem={renderItem}
