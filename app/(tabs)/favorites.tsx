@@ -115,9 +115,6 @@ export default function KisiselScreen() {
         if (!selectedList) return;
         Haptics.selectionAsync();
         removeItemFromList(selectedList.id, itemId);
-        // Update selected list
-        const updatedList = lists.find((l) => l.id === selectedList.id);
-        if (updatedList) setSelectedList(updatedList);
     };
 
     const renderListItem = useCallback(
@@ -180,7 +177,7 @@ export default function KisiselScreen() {
                 </TouchableOpacity>
             </View>
         ),
-        [selectedList]
+        [selectedList, lists]
     );
 
     const renderEmptyLists = () => (
@@ -274,6 +271,15 @@ export default function KisiselScreen() {
     );
 
     if (viewMode === 'listDetail' && selectedList) {
+        // Get the current list from store to ensure we have the latest data
+        const currentList = lists.find((l) => l.id === selectedList.id);
+        if (!currentList) {
+            // List was deleted, go back to lists view
+            setViewMode('lists');
+            setSelectedList(null);
+            return null;
+        }
+
         return (
             <View
                 className="flex-1 bg-white"
@@ -292,16 +298,16 @@ export default function KisiselScreen() {
                     </TouchableOpacity>
                     <View className="flex-1">
                         <Text className="text-2xl font-bold text-slate-800 tracking-tight">
-                            {selectedList.name}
+                            {currentList.name}
                         </Text>
                         <Text className="text-sm text-slate-500 mt-1">
-                            {selectedList.items.length} bölüm
+                            {currentList.items.length} bölüm
                         </Text>
                     </View>
                 </View>
                 <View className="flex-1 bg-slate-50 pt-3">
                     <FlashList
-                        data={selectedList.items}
+                        data={currentList.items}
                         renderItem={renderRankingItem}
                         estimatedItemSize={120}
                         ListEmptyComponent={renderEmptyListDetail}
