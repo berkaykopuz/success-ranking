@@ -1,25 +1,29 @@
 import { useQuery } from '@tanstack/react-query';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Globe, Heart, Mail } from 'lucide-react-native';
-import React from 'react';
+import { ArrowLeft, Globe, Plus, Mail } from 'lucide-react-native';
+import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import { fetchRankingDetails } from '../../src/api/rankings';
-import { useUserStore } from '../../src/store/userStore';
+import { ListModal } from '../../src/components/ListModal';
 
 export default function RankingDetailScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const insets = useSafeAreaInsets();
-
-    const { toggleFavorite, isFavorite } = useUserStore();
-    const isFav = id ? isFavorite(id as string) : false;
+    const [isListModalVisible, setIsListModalVisible] = useState(false);
 
     const { data, isLoading, isError } = useQuery({
         queryKey: ['ranking', id],
         queryFn: () => fetchRankingDetails(id as string),
         enabled: !!id,
     });
+
+    const handleAddToList = () => {
+        Haptics.selectionAsync();
+        setIsListModalVisible(true);
+    };
 
     if (isLoading) {
         return (
@@ -48,13 +52,12 @@ export default function RankingDetailScreen() {
                         <ArrowLeft color="white" size={24} />
                     </TouchableOpacity>
                     <TouchableOpacity
-                        onPress={() => toggleFavorite(data)}
+                        onPress={handleAddToList}
                         className="w-10 h-10 items-center justify-center rounded-full bg-white/10 active:bg-white/20"
                     >
-                        <Heart
+                        <Plus
                             color="white"
                             size={24}
-                            fill={isFav ? "white" : "transparent"}
                         />
                     </TouchableOpacity>
                 </View>
@@ -133,6 +136,12 @@ export default function RankingDetailScreen() {
                     </View>
                 </View>
             </ScrollView>
+
+            <ListModal
+                visible={isListModalVisible}
+                onClose={() => setIsListModalVisible(false)}
+                item={data || null}
+            />
         </View>
     );
 }

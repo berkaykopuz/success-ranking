@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useFilterStore } from '../store/filterStore';
 
 interface FilterModalProps {
@@ -89,38 +90,48 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
             visible={visible}
             onRequestClose={onClose}
         >
-            <View className="flex-1 bg-black/60 justify-center items-center px-4">
+            <BlurView
+                intensity={60}
+                tint="dark"
+                className="flex-1 justify-center items-center"
+            >
+                <View className="absolute inset-0 bg-black/30" />
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    className="w-full"
+                    className="w-full items-center justify-center flex-1 px-4"
                 >
                     <View
-                        className="bg-white rounded-3xl w-full flex-col shadow-2xl overflow-hidden"
-                        style={{ maxHeight: '88%' }}
+                        className="bg-white flex-1 flex-col shadow-2xl overflow-hidden w-full"
+                        style={{ maxHeight: '80%', borderRadius: 20 }}
                     >
                         {/* Header */}
-                        <View className="flex-row justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
+                        <View className="flex-row justify-between items-center px-5 py-4 border-b border-slate-100 bg-slate-50/50">
                             <Text className="text-xl font-bold text-slate-800">Filtrele</Text>
                             <TouchableOpacity onPress={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200">
                                 <X size={20} color="#64748b" />
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
+                        <ScrollView 
+                            className="flex-1 px-5" 
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={{ paddingBottom: 10 }}
+                        >
                             {/* Sort Section */}
                             <View className="py-5 border-b border-slate-100">
                                 <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">Sıralama</Text>
-                                <View className="flex-row flex-wrap gap-2">
-                                    {['score', 'rank', 'quota', 'year'].map((item) => {
+                                <View className="flex-row w-full">
+                                    {['score', 'rank', 'quota', 'year'].map((item, index) => {
                                         const labels: Record<string, string> = { score: 'Puan', rank: 'Sıralama', quota: 'Kontenjan', year: 'Yıl' };
                                         const isSelected = localFilters.sortBy === item;
                                         return (
                                             <TouchableOpacity
                                                 key={item}
                                                 onPress={() => setLocalFilters(prev => ({ ...prev, sortBy: item as any }))}
-                                                className={`px-4 py-3 rounded-xl border ${isSelected ? 'bg-blue-600 border-blue-600' : 'bg-slate-50 border-slate-200'}`}
+                                                className={`flex-1 py-3 rounded-xl border items-center justify-center ${index > 0 ? 'ml-1.5' : ''} ${isSelected ? 'bg-blue-600 border-blue-600' : 'bg-slate-50 border-slate-200'}`}
+                                                style={{ flex: 1 }}
                                             >
-                                                <Text className={`text-base font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`}>
+                                                <Text className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`}>
                                                     {labels[item]}
                                                 </Text>
                                             </TouchableOpacity>
@@ -150,7 +161,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                             {/* Text Inputs Section */}
                             <View className="py-5 border-b border-slate-100 gap-4">
                                 <View>
-                                    <Text className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">Şehir</Text>
+                                    <Text className="text-xs font-bold text-slate-400 mb-2 pt-2 uppercase tracking-wider">Şehir</Text>
                                     <TextInput
                                         className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium text-sm"
                                         placeholder="Örn: Ankara, İstanbul..."
@@ -192,7 +203,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                         />
                                         <View className="justify-center"><Text className="text-slate-300 font-bold">-</Text></View>
                                         <TextInput
-                                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium text-sm text-center"
+                                            className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-700 font-medium text-sm text-center"
                                             placeholder="Max"
                                             keyboardType="numeric"
                                             value={localFilters.maxScore}
@@ -225,25 +236,25 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                         </ScrollView>
 
                         {/* Footer Actions */}
-                        <View className="p-5 border-t border-slate-100 bg-slate-50">
+                        <View className="px-5 pt-6 pb-5 border-t border-slate-100 bg-slate-50">
                             <View className="flex-row gap-3">
                                 <TouchableOpacity
                                     onPress={handleClear}
-                                    className="flex-1 py-3.5 rounded-xl border border-slate-200 items-center justify-center bg-white"
+                                    className="flex-1 py-6 rounded-full border border-slate-200 items-center justify-center bg-white"
                                 >
-                                    <Text className="font-bold text-slate-600">Temizle</Text>
+                                    <Text className="font-bold text-slate-600 text-lg">Temizle</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     onPress={handleApply}
-                                    className="flex-[2] py-3.5 rounded-xl bg-blue-600 items-center justify-center shadow-lg shadow-blue-200"
+                                    className="flex-1 py-6 rounded-full bg-blue-600 items-center justify-center shadow-lg shadow-blue-200"
                                 >
-                                    <Text className="font-bold text-white">Uygula</Text>
+                                    <Text className="font-bold text-white text-lg">Uygula</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
                     </View>
                 </KeyboardAvoidingView>
-            </View>
+            </BlurView>
         </Modal>
     );
 };

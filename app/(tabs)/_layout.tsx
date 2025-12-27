@@ -26,8 +26,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="favorites"
         options={{
-          title: 'Favoriler',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="heart.fill" color={color} />,
+          title: 'Kişisel',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="folder.fill" color={color} />,
         }}
       />
     </Tabs>

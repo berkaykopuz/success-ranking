@@ -63,40 +63,50 @@ export const FilterBar = () => {
             </View>
 
             {/* Main Categories Row */}
-            <View className="flex-row items-center mt-3 px-4">
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ gap: 8, paddingRight: 8 }} // Adjusted gap
-                    className="flex-1 mr-2"
-                >
-                    {CATEGORIES.map((cat) => (
-                        <Pressable
-                            key={cat}
-                            onPress={() => handleCategoryPress(cat)}
-                            className={`px-5 py-2.5 justify-center items-center rounded-2xl border ${
-                                scoreType === cat
-                                    ? 'bg-blue-600 border-blue-600'
-                                    : 'bg-white border-slate-200'
+            <View className="flex-row items-center mt-3 px-4 gap-2.5">
+                {CATEGORIES.map((cat) => (
+                    <Pressable
+                        key={cat}
+                        onPress={() => handleCategoryPress(cat)}
+                        className={`flex-1 py-4 justify-center items-center rounded-2xl border-2 shadow-sm ${
+                            scoreType === cat
+                                ? 'bg-blue-600 border-blue-600 shadow-blue-200'
+                                : 'bg-white border-slate-200 shadow-slate-100'
+                        }`}
+                        style={{
+                            shadowColor: scoreType === cat ? '#3b82f6' : '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: scoreType === cat ? 0.2 : 0.05,
+                            shadowRadius: 4,
+                            elevation: scoreType === cat ? 4 : 2,
+                        }}
+                    >
+                        <Text
+                            className={`text-base font-bold tracking-wide ${
+                                scoreType === cat ? 'text-white' : 'text-slate-700'
                             }`}
                         >
-                            <Text
-                                className={`text-sm font-bold tracking-wide ${
-                                    scoreType === cat ? 'text-white' : 'text-slate-600'
-                                }`}
-                            >
-                                {cat}
-                            </Text>
-                        </Pressable>
-                    ))}
-                </ScrollView>
+                            {cat}
+                        </Text>
+                    </Pressable>
+                ))}
 
                 <TouchableOpacity
-                    className="flex-row items-center bg-white p-3 rounded-2xl border border-slate-200 shadow-sm ml-2"
-                    onPress={() => setFilterModalVisible(true)}
+                    className="flex-row items-center justify-center bg-white p-3.5 rounded-2xl border-2 border-slate-200"
+                    onPress={() => {
+                        Haptics.selectionAsync();
+                        setFilterModalVisible(true);
+                    }}
                     activeOpacity={0.7}
+                    style={{
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.08,
+                        shadowRadius: 4,
+                        elevation: 3,
+                    }}
                 >
-                    <Filter size={20} color="#475569" />
+                    <Filter size={22} color="#475569" strokeWidth={2.5} />
                 </TouchableOpacity>
 
                 <FilterModal
@@ -107,7 +117,7 @@ export const FilterBar = () => {
 
             {/* Sub Categories */}
             {scoreType && SUB_CATEGORIES[scoreType] && (
-                <View className="mt-4">
+                <View style={{ marginTop: 5, paddingTop: 8 }}>
                      <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -119,15 +129,22 @@ export const FilterBar = () => {
                                 <TouchableOpacity
                                     key={sub}
                                     onPress={() => handleSubCategoryPress(sub)}
-                                    className={`px-4 py-2 rounded-full border ${
+                                    className={`px-5 py-2.5 rounded-full border-2 ${
                                         isSelected
                                             ? 'bg-blue-600 border-blue-600'
                                             : 'bg-white border-slate-200'
                                     }`}
+                                    style={{
+                                        shadowColor: isSelected ? '#3b82f6' : '#000',
+                                        shadowOffset: { width: 0, height: 1 },
+                                        shadowOpacity: isSelected ? 0.15 : 0.05,
+                                        shadowRadius: 3,
+                                        elevation: isSelected ? 3 : 1,
+                                    }}
                                 >
                                     <Text
-                                        className={`text-xs font-semibold ${
-                                            isSelected ? 'text-white' : 'text-slate-600'
+                                        className={`text-sm font-semibold ${
+                                            isSelected ? 'text-white' : 'text-slate-700'
                                         }`}
                                     >
                                         {sub}
@@ -149,24 +166,44 @@ export const FilterBar = () => {
                 >
                     {year && (
                         <TouchableOpacity
-                            className="bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 flex-row items-center"
-                            onPress={() => setFilter('year', null)}
+                            className="bg-indigo-100 px-4 py-2 rounded-full border-2 border-indigo-200 flex-row items-center"
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                setFilter('year', null);
+                            }}
+                            style={{
+                                shadowColor: '#6366f1',
+                                shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 2,
+                                elevation: 2,
+                            }}
                         >
-                            <Text className="text-xs font-medium text-indigo-700 mr-1">
+                            <Text className="text-xs font-semibold text-indigo-700 mr-2">
                                 {year}
                             </Text>
-                            <X size={12} color="#4338ca" />
+                            <X size={14} color="#4338ca" strokeWidth={2.5} />
                         </TouchableOpacity>
                     )}
                     {city && (
                         <TouchableOpacity
-                            className="bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 flex-row items-center"
-                            onPress={() => setFilter('city', null)}
+                            className="bg-indigo-100 px-4 py-2 rounded-full border-2 border-indigo-200 flex-row items-center"
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                setFilter('city', null);
+                            }}
+                            style={{
+                                shadowColor: '#6366f1',
+                                shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 2,
+                                elevation: 2,
+                            }}
                         >
-                            <Text className="text-xs font-medium text-indigo-700 mr-1">
+                            <Text className="text-xs font-semibold text-indigo-700 mr-2">
                                 {city}
                             </Text>
-                            <X size={12} color="#4338ca" />
+                            <X size={14} color="#4338ca" strokeWidth={2.5} />
                         </TouchableOpacity>
                     )}
                 </ScrollView>
