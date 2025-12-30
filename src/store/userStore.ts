@@ -11,9 +11,28 @@ export interface PersonalList {
     updatedAt: number;
 }
 
+export interface YKSCalculation {
+    id: string;
+    name: string;
+    tytValues: Record<string, { correct: string; wrong: string }>;
+    aytValues: Record<string, { correct: string; wrong: string }>;
+    diplomaGrade: string;
+    kirikOBP: boolean;
+    tytHamPuan: number;
+    sayHamPuan: number;
+    eaHamPuan: number;
+    sozHamPuan: number;
+    tytYerlesme: number;
+    sayYerlesme: number;
+    eaYerlesme: number;
+    sozYerlesme: number;
+    createdAt: number;
+}
+
 interface UserState {
     lists: PersonalList[];
     recentSearches: string[];
+    yksCalculations: YKSCalculation[];
     createList: (name: string) => string;
     deleteList: (listId: string) => void;
     addItemToList: (listId: string, item: RankingItem) => void;
@@ -27,6 +46,10 @@ interface UserState {
     toggleFavorite: (item: RankingItem) => void;
     isFavorite: (id: string) => boolean;
     getFavorites: () => RankingItem[];
+    // YKS Calculations
+    saveYKSCalculation: (calculation: Omit<YKSCalculation, 'id' | 'createdAt'>) => void;
+    deleteYKSCalculation: (id: string) => void;
+    getYKSCalculations: () => YKSCalculation[];
 }
 
 export const useUserStore = create<UserState>()(
@@ -34,6 +57,7 @@ export const useUserStore = create<UserState>()(
         (set, get) => ({
             lists: [],
             recentSearches: [],
+            yksCalculations: [],
 
             createList: (name) => {
                 const newList: PersonalList = {
@@ -154,6 +178,28 @@ export const useUserStore = create<UserState>()(
 
             isFavorite: (id) => {
                 return get().isItemInList('favorites', id);
+            },
+
+            // YKS Calculations
+            saveYKSCalculation: (calculation) => {
+                const newCalculation: YKSCalculation = {
+                    ...calculation,
+                    id: `yks_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    createdAt: Date.now(),
+                };
+                set((state) => ({
+                    yksCalculations: [newCalculation, ...state.yksCalculations],
+                }));
+            },
+
+            deleteYKSCalculation: (id) => {
+                set((state) => ({
+                    yksCalculations: state.yksCalculations.filter((calc) => calc.id !== id),
+                }));
+            },
+
+            getYKSCalculations: () => {
+                return get().yksCalculations.sort((a, b) => b.createdAt - a.createdAt);
             },
         }),
         {

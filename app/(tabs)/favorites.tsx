@@ -9,15 +9,16 @@ import {
     TextInput,
     Pressable,
     Alert,
+    ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { RankingCard } from '../../src/components/RankingCard';
-import { useUserStore, PersonalList } from '../../src/store/userStore';
+import { useUserStore, PersonalList, YKSCalculation } from '../../src/store/userStore';
 import { RankingItem } from '../../src/types/ranking';
 import { useRouter } from 'expo-router';
 
-type ViewMode = 'main' | 'lists' | 'listDetail' | 'pastScores';
+type ViewMode = 'main' | 'lists' | 'listDetail' | 'pastScores' | 'calculationDetail';
 
 export default function KisiselScreen() {
     const insets = useSafeAreaInsets();
@@ -28,10 +29,13 @@ export default function KisiselScreen() {
         deleteList,
         updateListName,
         removeItemFromList,
+        getYKSCalculations,
+        deleteYKSCalculation,
     } = useUserStore();
 
     const [viewMode, setViewMode] = useState<ViewMode>('main');
     const [selectedList, setSelectedList] = useState<PersonalList | null>(null);
+    const [selectedCalculation, setSelectedCalculation] = useState<YKSCalculation | null>(null);
     const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [newListName, setNewListName] = useState('');
@@ -254,21 +258,500 @@ export default function KisiselScreen() {
         </View>
     );
 
-    const renderPastScores = () => (
-        <View className="flex-1 bg-slate-50 pt-3">
-            <View className="flex-1 justify-center items-center mt-20 px-10">
-                <View className="bg-slate-100 p-6 rounded-full mb-6 shadow-sm">
-                    <History size={48} color="#94a3b8" />
-                </View>
-                <Text className="text-xl font-bold text-slate-800 mb-3">
-                    Henüz net kaydedilmedi
-                </Text>
-                <Text className="text-slate-500 text-center text-base leading-relaxed max-w-[280px]">
-                    Geçmiş net skorlarınız burada görüntülenecek.
-                </Text>
-            </View>
-        </View>
+    const yksCalculations = getYKSCalculations();
+
+    const handleDeleteCalculation = (id: string, name: string, e?: any) => {
+        e?.stopPropagation();
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        Alert.alert(
+            'Hesaplamayı Sil',
+            `"${name}" hesaplamasını silmek istediğinize emin misiniz?`,
+            [
+                { text: 'İptal', style: 'cancel' },
+                {
+                    text: 'Sil',
+                    style: 'destructive',
+                    onPress: () => {
+                        deleteYKSCalculation(id);
+                        if (selectedCalculation?.id === id) {
+                            setViewMode('pastScores');
+                            setSelectedCalculation(null);
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleOpenCalculation = (calculation: YKSCalculation) => {
+        Haptics.selectionAsync();
+        setSelectedCalculation(calculation);
+        setViewMode('calculationDetail');
+    };
+
+    const handleBackToPastScores = () => {
+        Haptics.selectionAsync();
+        setViewMode('pastScores');
+        setSelectedCalculation(null);
+    };
+
+    const renderYKSCalculation = useCallback(
+        ({ item }: { item: YKSCalculation }) => {
+            const date = new Date(item.createdAt);
+            const formattedDate = date.toLocaleDateString('tr-TR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+            });
+
+            return (
+                <TouchableOpacity
+                    onPress={() => handleOpenCalculation(item)}
+                    className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4 active:scale-[0.98]"
+                >
+                    <View className="flex-row items-start justify-between mb-3">
+                        <View className="flex-1">
+                            <Text className="text-lg font-bold text-slate-800 mb-1">
+                                {item.name}
+                            </Text>
+                            <Text className="text-xs text-slate-500">{formattedDate}</Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={(e) => handleDeleteCalculation(item.id, item.name, e)}
+                            className="p-2"
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <Trash2 size={18} color="#ef4444" />
+                        </TouchableOpacity>
+                    </View>
+
+                    <View className="flex-row items-center justify-between bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 mb-2">
+                        <View className="items-center flex-1 border-r border-slate-200">
+                            <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">TYT</Text>
+                            <Text className="text-sm font-semibold text-slate-700">
+                                {item.tytHamPuan.toFixed(1).replace('.', ',')}
+                            </Text>
+                        </View>
+                        <View className="items-center flex-1">
+                            <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">SAY</Text>
+                            <Text className="text-sm font-semibold text-slate-700">
+                                {item.sayHamPuan > 0 ? item.sayHamPuan.toFixed(1).replace('.', ',') : '—'}
+                            </Text>
+                        </View>
+                        <View className="items-center flex-1 border-l border-slate-200">
+                            <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">EA</Text>
+                            <Text className="text-sm font-semibold text-slate-700">
+                                {item.eaHamPuan > 0 ? item.eaHamPuan.toFixed(1).replace('.', ',') : '—'}
+                            </Text>
+                        </View>
+                        <View className="items-center flex-1 border-l border-slate-200">
+                            <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">SÖZ</Text>
+                            <Text className="text-sm font-semibold text-slate-700">
+                                {item.sozHamPuan > 0 ? item.sozHamPuan.toFixed(1).replace('.', ',') : '—'}
+                            </Text>
+                        </View>
+                    </View>
+
+                    {item.diplomaGrade && parseFloat(item.diplomaGrade) > 0 && (
+                        <View className="mt-2 pt-2 border-t border-slate-200">
+                            <Text className="text-xs text-slate-500">
+                                Diploma Notu: {item.diplomaGrade} {item.kirikOBP && '(Kırık OBP)'}
+                            </Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
+            );
+        },
+        []
     );
+
+    const renderPastScores = () => {
+        if (yksCalculations.length === 0) {
+            return (
+                <View className="flex-1 bg-slate-50 pt-3">
+                    <View className="flex-1 justify-center items-center mt-20 px-10">
+                        <View className="bg-slate-100 p-6 rounded-full mb-6 shadow-sm">
+                            <History size={48} color="#94a3b8" />
+                        </View>
+                        <Text className="text-xl font-bold text-slate-800 mb-3">
+                            Henüz net kaydedilmedi
+                        </Text>
+                        <Text className="text-slate-500 text-center text-base leading-relaxed max-w-[280px]">
+                            Geçmiş net skorlarınız burada görüntülenecek.
+                        </Text>
+                    </View>
+                </View>
+            );
+        }
+
+        return (
+            <View className="flex-1 bg-slate-50 pt-3">
+                <FlashList
+                    data={yksCalculations}
+                    renderItem={renderYKSCalculation}
+                    estimatedItemSize={150}
+                    contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+                />
+            </View>
+        );
+    };
+
+    const renderCalculationDetail = () => {
+        if (!selectedCalculation) return null;
+
+        const date = new Date(selectedCalculation.createdAt);
+        const formattedDate = date.toLocaleDateString('tr-TR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+
+        // Calculate TYT total net
+        const tytTotalNet = 
+            getNetFromValue(selectedCalculation.tytValues.turkce) +
+            getNetFromValue(selectedCalculation.tytValues.matematik) +
+            getNetFromValue(selectedCalculation.tytValues.sosyal) +
+            getNetFromValue(selectedCalculation.tytValues.fen);
+
+        // Calculate AYT total nets
+        const aytSayTotalNet = 
+            getNetFromValue(selectedCalculation.aytValues.aytMatematik) +
+            getNetFromValue(selectedCalculation.aytValues.aytFizik) +
+            getNetFromValue(selectedCalculation.aytValues.aytKimya) +
+            getNetFromValue(selectedCalculation.aytValues.aytBiyoloji);
+
+        const aytEaTotalNet = 
+            getNetFromValue(selectedCalculation.aytValues.aytMatematik) +
+            getNetFromValue(selectedCalculation.aytValues.aytEdebiyat) +
+            getNetFromValue(selectedCalculation.aytValues.aytTarih1) +
+            getNetFromValue(selectedCalculation.aytValues.aytCografya1);
+
+        const aytSozTotalNet = 
+            getNetFromValue(selectedCalculation.aytValues.aytEdebiyat) +
+            getNetFromValue(selectedCalculation.aytValues.aytTarih1) +
+            getNetFromValue(selectedCalculation.aytValues.aytCografya1) +
+            getNetFromValue(selectedCalculation.aytValues.aytTarih2) +
+            getNetFromValue(selectedCalculation.aytValues.aytCografya2) +
+            getNetFromValue(selectedCalculation.aytValues.aytFelsefe) +
+            getNetFromValue(selectedCalculation.aytValues.aytDin);
+
+        return (
+            <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
+                <View className="px-5 py-4 border-b border-slate-100 flex-row items-center">
+                    <TouchableOpacity
+                        onPress={handleBackToPastScores}
+                        className="mr-3 p-2"
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <ArrowLeft size={24} color="#64748b" />
+                    </TouchableOpacity>
+                    <View className="flex-1">
+                        <Text className="text-2xl font-bold text-slate-800 tracking-tight">
+                            {selectedCalculation.name}
+                        </Text>
+                        <Text className="text-sm text-slate-500 mt-1">{formattedDate}</Text>
+                    </View>
+                </View>
+
+                <ScrollView
+                    className="flex-1 bg-slate-50 pt-2"
+                    contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+                >
+                    {/* TYT Card */}
+                    <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                        <View className="flex-row items-center justify-between mb-2">
+                            <View className="flex-row items-center">
+                                <View className="bg-blue-50 px-2.5 py-1 rounded-md mr-2">
+                                    <Text className="text-blue-700 font-bold text-[10px] tracking-wider uppercase">TYT</Text>
+                                </View>
+                                <Text className="text-lg font-bold text-slate-800">Temel Yeterlilik Testi</Text>
+                            </View>
+                        </View>
+                        <Text className="text-xs text-slate-500 mb-4 ml-0">
+                            Başlangıç: 145.47 | 2025 katsayıları
+                        </Text>
+
+                        <ReadOnlySectionRow
+                            label="Türkçe"
+                            help="40 soru • Katsayı: 2.83"
+                            value={selectedCalculation.tytValues.turkce}
+                        />
+                        <ReadOnlySectionRow
+                            label="Temel Matematik"
+                            help="40 soru • Katsayı: 3.28"
+                            value={selectedCalculation.tytValues.matematik}
+                        />
+                        <ReadOnlySectionRow
+                            label="Sosyal Bilimler"
+                            help="20 soru • Katsayı: 2.99"
+                            value={selectedCalculation.tytValues.sosyal}
+                        />
+                        <ReadOnlySectionRow
+                            label="Fen Bilimleri"
+                            help="20 soru • Katsayı: 2.53"
+                            value={selectedCalculation.tytValues.fen}
+                        />
+
+                        <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                            <View className="flex-row items-center justify-between">
+                                <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam TYT Net</Text>
+                                <Text className="text-lg font-bold text-blue-600 tracking-tight">
+                                    {tytTotalNet.toFixed(2).replace('.', ',')}
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* AYT Sayısal Card */}
+                    <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                        <View className="flex-row items-center justify-between mb-2">
+                            <View className="flex-row items-center">
+                                <View className="bg-emerald-50 px-2.5 py-1 rounded-md mr-2">
+                                    <Text className="text-emerald-700 font-bold text-[10px] tracking-wider uppercase">SAY</Text>
+                                </View>
+                                <Text className="text-lg font-bold text-slate-800">Sayısal Alan</Text>
+                            </View>
+                        </View>
+                        <Text className="text-xs text-slate-500 mb-4 ml-0">
+                            Başlangıç: 132.87 | 2025 katsayıları
+                        </Text>
+
+                        <ReadOnlySectionRow
+                            label="AYT Matematik"
+                            help="Katsayı: 2.89"
+                            value={selectedCalculation.aytValues.aytMatematik}
+                        />
+                        <ReadOnlySectionRow
+                            label="Fizik"
+                            help="Katsayı: 2.46"
+                            value={selectedCalculation.aytValues.aytFizik}
+                        />
+                        <ReadOnlySectionRow
+                            label="Kimya"
+                            help="Katsayı: 2.53"
+                            value={selectedCalculation.aytValues.aytKimya}
+                        />
+                        <ReadOnlySectionRow
+                            label="Biyoloji"
+                            help="Katsayı: 2.61"
+                            value={selectedCalculation.aytValues.aytBiyoloji}
+                        />
+
+                        <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                            <View className="flex-row items-center justify-between">
+                                <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam AYT Net</Text>
+                                <Text className="text-lg font-bold text-emerald-600 tracking-tight">
+                                    {aytSayTotalNet.toFixed(2).replace('.', ',')}
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* AYT Eşit Ağırlık Card */}
+                    <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                        <View className="flex-row items-center justify-between mb-2">
+                            <View className="flex-row items-center">
+                                <View className="bg-purple-50 px-2.5 py-1 rounded-md mr-2">
+                                    <Text className="text-purple-700 font-bold text-[10px] tracking-wider uppercase">EA</Text>
+                                </View>
+                                <Text className="text-lg font-bold text-slate-800">Eşit Ağırlık Alan</Text>
+                            </View>
+                        </View>
+                        <Text className="text-xs text-slate-500 mb-4 ml-0">
+                            Başlangıç: 129.34 | 2025 katsayıları
+                        </Text>
+
+                        <ReadOnlySectionRow
+                            label="AYT Matematik"
+                            help="Katsayı: 2.88"
+                            value={selectedCalculation.aytValues.aytMatematik}
+                        />
+                        <ReadOnlySectionRow
+                            label="Edebiyat"
+                            help="Katsayı: 2.94"
+                            value={selectedCalculation.aytValues.aytEdebiyat}
+                        />
+                        <ReadOnlySectionRow
+                            label="Tarih-1"
+                            help="Katsayı: 2.53"
+                            value={selectedCalculation.aytValues.aytTarih1}
+                        />
+                        <ReadOnlySectionRow
+                            label="Coğrafya-1"
+                            help="Katsayı: 2.85"
+                            value={selectedCalculation.aytValues.aytCografya1}
+                        />
+
+                        <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                            <View className="flex-row items-center justify-between">
+                                <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam AYT Net</Text>
+                                <Text className="text-lg font-bold text-purple-600 tracking-tight">
+                                    {aytEaTotalNet.toFixed(2).replace('.', ',')}
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* AYT Sözel Card */}
+                    <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                        <View className="flex-row items-center justify-between mb-2">
+                            <View className="flex-row items-center">
+                                <View className="bg-orange-50 px-2.5 py-1 rounded-md mr-2">
+                                    <Text className="text-orange-700 font-bold text-[10px] tracking-wider uppercase">SÖZ</Text>
+                                </View>
+                                <Text className="text-lg font-bold text-slate-800">Sözel Alan</Text>
+                            </View>
+                        </View>
+                        <Text className="text-xs text-slate-500 mb-4 ml-0">
+                            Başlangıç: 129.61 | 2025 katsayıları
+                        </Text>
+
+                        <ReadOnlySectionRow
+                            label="Edebiyat"
+                            help="Katsayı: 2.79"
+                            value={selectedCalculation.aytValues.aytEdebiyat}
+                        />
+                        <ReadOnlySectionRow
+                            label="Tarih-1"
+                            help="Katsayı: 2.39"
+                            value={selectedCalculation.aytValues.aytTarih1}
+                        />
+                        <ReadOnlySectionRow
+                            label="Coğrafya-1"
+                            help="Katsayı: 2.70"
+                            value={selectedCalculation.aytValues.aytCografya1}
+                        />
+                        <ReadOnlySectionRow
+                            label="Tarih-2"
+                            help="Katsayı: 3.80"
+                            value={selectedCalculation.aytValues.aytTarih2}
+                        />
+                        <ReadOnlySectionRow
+                            label="Coğrafya-2"
+                            help="Katsayı: 2.47"
+                            value={selectedCalculation.aytValues.aytCografya2}
+                        />
+                        <ReadOnlySectionRow
+                            label="Felsefe Grubu"
+                            help="Katsayı: 3.76"
+                            value={selectedCalculation.aytValues.aytFelsefe}
+                        />
+                        <ReadOnlySectionRow
+                            label="Din Kültürü"
+                            help="Katsayı: 2.36"
+                            value={selectedCalculation.aytValues.aytDin}
+                        />
+
+                        <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                            <View className="flex-row items-center justify-between">
+                                <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam AYT Net</Text>
+                                <Text className="text-lg font-bold text-orange-600 tracking-tight">
+                                    {aytSozTotalNet.toFixed(2).replace('.', ',')}
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Results Card */}
+                    <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                        <View className="flex-row items-center mb-4">
+                            <View className="bg-slate-900 px-2.5 py-1 rounded-md mr-2">
+                                <Text className="text-white font-bold text-[10px] tracking-wider uppercase">Sonuçlar</Text>
+                            </View>
+                        </View>
+
+                        {/* TYT Results */}
+                        <View className="mb-4">
+                            <Text className="text-sm font-bold text-slate-800 mb-2">TYT Puanı</Text>
+                            <View className="bg-blue-50 px-3 py-2 rounded-xl border border-blue-200">
+                                <View className="flex-row items-center justify-between mb-1">
+                                    <Text className="text-xs text-blue-600 font-medium">Ham Puan</Text>
+                                    <Text className="text-base font-bold text-blue-700">
+                                        {selectedCalculation.tytHamPuan.toFixed(1).replace('.', ',')}
+                                    </Text>
+                                </View>
+                                {selectedCalculation.diplomaGrade && parseFloat(selectedCalculation.diplomaGrade) > 0 && (
+                                    <View className="flex-row items-center justify-between pt-1 border-t border-blue-200">
+                                        <Text className="text-xs text-blue-600 font-medium">Yerleştirme Puanı</Text>
+                                        <Text className="text-base font-bold text-blue-700">
+                                            {selectedCalculation.tytYerlesme.toFixed(1).replace('.', ',')}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        </View>
+
+                        {/* SAY Results */}
+                        <View className="mb-4">
+                            <Text className="text-sm font-bold text-slate-800 mb-2">SAY (Sayısal) Puanı</Text>
+                            <View className="bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200">
+                                <View className="flex-row items-center justify-between mb-1">
+                                    <Text className="text-xs text-emerald-600 font-medium">Ham Puan</Text>
+                                    <Text className="text-base font-bold text-emerald-700">
+                                        {selectedCalculation.sayHamPuan > 0 ? selectedCalculation.sayHamPuan.toFixed(1).replace('.', ',') : '—'}
+                                    </Text>
+                                </View>
+                                {selectedCalculation.diplomaGrade && parseFloat(selectedCalculation.diplomaGrade) > 0 && (
+                                    <View className="flex-row items-center justify-between pt-1 border-t border-emerald-200">
+                                        <Text className="text-xs text-emerald-600 font-medium">Yerleştirme Puanı</Text>
+                                        <Text className="text-base font-bold text-emerald-700">
+                                            {selectedCalculation.sayYerlesme.toFixed(1).replace('.', ',')}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        </View>
+
+                        {/* EA Results */}
+                        <View className="mb-4">
+                            <Text className="text-sm font-bold text-slate-800 mb-2">EA (Eşit Ağırlık) Puanı</Text>
+                            <View className="bg-purple-50 px-3 py-2 rounded-xl border border-purple-200">
+                                <View className="flex-row items-center justify-between mb-1">
+                                    <Text className="text-xs text-purple-600 font-medium">Ham Puan</Text>
+                                    <Text className="text-base font-bold text-purple-700">
+                                        {selectedCalculation.eaHamPuan > 0 ? selectedCalculation.eaHamPuan.toFixed(1).replace('.', ',') : '—'}
+                                    </Text>
+                                </View>
+                                {selectedCalculation.diplomaGrade && parseFloat(selectedCalculation.diplomaGrade) > 0 && (
+                                    <View className="flex-row items-center justify-between pt-1 border-t border-purple-200">
+                                        <Text className="text-xs text-purple-600 font-medium">Yerleştirme Puanı</Text>
+                                        <Text className="text-base font-bold text-purple-700">
+                                            {selectedCalculation.eaYerlesme.toFixed(1).replace('.', ',')}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        </View>
+
+                        {/* SÖZ Results */}
+                        <View className="mb-2">
+                            <Text className="text-sm font-bold text-slate-800 mb-2">SÖZ (Sözel) Puanı</Text>
+                            <View className="bg-orange-50 px-3 py-2 rounded-xl border border-orange-200">
+                                <View className="flex-row items-center justify-between mb-1">
+                                    <Text className="text-xs text-orange-600 font-medium">Ham Puan</Text>
+                                    <Text className="text-base font-bold text-orange-700">
+                                        {selectedCalculation.sozHamPuan > 0 ? selectedCalculation.sozHamPuan.toFixed(1).replace('.', ',') : '—'}
+                                    </Text>
+                                </View>
+                                {selectedCalculation.diplomaGrade && parseFloat(selectedCalculation.diplomaGrade) > 0 && (
+                                    <View className="flex-row items-center justify-between pt-1 border-t border-orange-200">
+                                        <Text className="text-xs text-orange-600 font-medium">Yerleştirme Puanı</Text>
+                                        <Text className="text-base font-bold text-orange-700">
+                                            {selectedCalculation.sozYerlesme.toFixed(1).replace('.', ',')}
+                                        </Text>
+                                    </View>
+                                )}
+                            </View>
+                        </View>
+                    </View>
+                </ScrollView>
+            </View>
+        );
+    };
 
     if (viewMode === 'listDetail' && selectedList) {
         // Get the current list from store to ensure we have the latest data
@@ -318,6 +801,10 @@ export default function KisiselScreen() {
                 </View>
             </View>
         );
+    }
+
+    if (viewMode === 'calculationDetail' && selectedCalculation) {
+        return renderCalculationDetail();
     }
 
     if (viewMode === 'pastScores') {
@@ -506,6 +993,56 @@ export default function KisiselScreen() {
                 </Text>
             </View>
             {renderMainMenu()}
+        </View>
+    );
+}
+
+// Helper function to calculate net from saved values
+const getNetFromValue = (value: { correct: string; wrong: string }) => {
+    const d = parseFloat(value.correct.replace(',', '.')) || 0;
+    const y = parseFloat(value.wrong.replace(',', '.')) || 0;
+    const net = d - y / 4;
+    return net < 0 ? 0 : net;
+};
+
+// Read-only section row component for displaying saved calculation values
+interface ReadOnlySectionRowProps {
+    label: string;
+    help?: string;
+    value: { correct: string; wrong: string };
+}
+
+function ReadOnlySectionRow({ label, help, value }: ReadOnlySectionRowProps) {
+    const net = getNetFromValue(value);
+
+    return (
+        <View className="mb-3 pb-3 border-b border-slate-100 last:border-b-0 last:pb-0 last:mb-0">
+            <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-sm font-medium text-slate-800">{label}</Text>
+                {help && (
+                    <Text className="text-xs text-slate-400 font-medium text-right max-w-[140px]">{help}</Text>
+                )}
+            </View>
+            <View className="flex-row gap-2">
+                <View className="flex-1">
+                    <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">Doğru</Text>
+                    <View className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
+                        <Text className="text-sm text-slate-900 font-medium">{value.correct || '0'}</Text>
+                    </View>
+                </View>
+                <View className="flex-1">
+                    <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">Yanlış</Text>
+                    <View className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
+                        <Text className="text-sm text-slate-900 font-medium">{value.wrong || '0'}</Text>
+                    </View>
+                </View>
+                <View className="w-20 items-center justify-center">
+                    <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">Net</Text>
+                    <View className="bg-blue-50 border border-blue-200 rounded-xl px-3 py-2.5 w-full items-center">
+                        <Text className="text-sm font-semibold text-blue-700">{net.toFixed(2).replace('.', ',')}</Text>
+                    </View>
+                </View>
+            </View>
         </View>
     );
 }

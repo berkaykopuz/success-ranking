@@ -97,7 +97,15 @@ export const fetchRankings = async (
     }
     if (filters.department) {
         const deptFilter = filters.department.toLocaleLowerCase('tr-TR');
-        filtered = filtered.filter(item => item.departmentName.toLocaleLowerCase('tr-TR').includes(deptFilter));
+        // Special case: "Mühendislik" should also match "Muhendisligi"
+        if (filters.department === 'Mühendislik') {
+            filtered = filtered.filter(item => {
+                const deptName = item.departmentName.toLocaleLowerCase('tr-TR');
+                return deptName.includes(deptFilter) || deptName.includes('mühendisliği');
+            });
+        } else {
+            filtered = filtered.filter(item => item.departmentName.toLocaleLowerCase('tr-TR').includes(deptFilter));
+        }
     }
     if (filters.searchQuery) {
         filtered = filtered.filter(item => matchesSearch(item, filters.searchQuery));

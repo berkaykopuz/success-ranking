@@ -161,7 +161,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                             {/* Text Inputs Section */}
                             <View className="py-5 border-b border-slate-100 gap-4">
                                 <View>
-                                    <Text className="text-xs font-bold text-slate-400 mb-2 pt-2 uppercase tracking-wider">Şehir</Text>
+                                    <Text className="text-xs font-bold text-slate-400 mb-2 pt-2 uppercase tracking-wider">ŞEHİR</Text>
                                     <TextInput
                                         className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium text-sm"
                                         placeholder="Örn: Ankara, İstanbul..."
@@ -170,7 +170,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                     />
                                 </View>
                                 <View>
-                                    <Text className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">Üniversite</Text>
+                                    <Text className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">ÜNİVERSİTE</Text>
                                     <TextInput
                                         className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium text-sm"
                                         placeholder="Örn: ODTÜ, Boğaziçi..."
@@ -179,7 +179,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                     />
                                 </View>
                                 <View>
-                                    <Text className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">Bölüm</Text>
+                                    <Text className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">BÖLÜM</Text>
                                     <TextInput
                                         className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-700 font-medium text-sm"
                                         placeholder="Örn: Bilgisayar Mühendisliği..."

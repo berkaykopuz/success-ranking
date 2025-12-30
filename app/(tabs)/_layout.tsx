@@ -30,6 +30,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="folder.fill" color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="yks"
+        options={{
+          title: 'Net Hesap',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="function" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }
