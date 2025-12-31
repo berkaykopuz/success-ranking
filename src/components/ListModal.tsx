@@ -9,6 +9,7 @@ import {
     ScrollView,
     Pressable,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useUserStore, PersonalList } from '../store/userStore';
 import { RankingItem } from '../types/ranking';
@@ -26,6 +27,7 @@ export const ListModal: React.FC<ListModalProps> = ({
     item,
     onAddComplete,
 }) => {
+    const insets = useSafeAreaInsets();
     const {
         lists,
         createList,
@@ -85,14 +87,16 @@ export const ListModal: React.FC<ListModalProps> = ({
             transparent
             animationType="slide"
             onRequestClose={handleClose}
+            statusBarTranslucent
         >
             <Pressable
                 className="flex-1 bg-black/50 justify-end"
+                style={{ paddingTop: insets.top }}
                 onPress={handleClose}
             >
                 <Pressable
                     className="bg-white rounded-t-3xl"
-                    style={{ maxHeight: '80%' }}
+                    style={{ maxHeight: '80%', paddingBottom: insets.bottom }}
                     onPress={(e) => e.stopPropagation()}
                 >
                     <View className="px-5 pt-4 pb-3 border-b border-slate-100">

@@ -19,6 +19,23 @@ export const RankingCard = React.memo(({ item, router }: Props) => {
         setIsListModalVisible(true);
     };
 
+    // Format department name with language and quota type
+    const formatDepartmentName = () => {
+        let formatted = item.departmentName;
+        
+        // Add language in parentheses if available
+        if (item.language) {
+            formatted += ` (${item.language})`;
+        }
+        
+        // Add quota type in parentheses if available
+        if (item.quotaType) {
+            formatted += ` (${item.quotaType})`;
+        }
+        
+        return formatted;
+    };
+
     return (
         <>
             <TouchableOpacity
@@ -33,21 +50,23 @@ export const RankingCard = React.memo(({ item, router }: Props) => {
                         </View>
                         <Text className="text-slate-400 text-xs font-medium">{item.city}</Text>
                     </View>
-                    <Text className="text-lg font-bold text-slate-800 leading-tight mb-1">{item.departmentName}</Text>
+                    <Text className="text-lg font-bold text-slate-800 leading-tight mb-1">{formatDepartmentName()}</Text>
                     <Text className="text-sm text-slate-500 font-medium">{item.universityName}</Text>
                     <Text className="text-xs text-slate-400 mt-0.5">{item.faculty}</Text>
                 </View>
 
                 <View className="items-end">
                     <Text className="text-[10px] text-slate-400 font-bold mb-0.5">Başarı Sıralaması</Text>
-                    <Text className="text-lg font-bold text-blue-600 tracking-tight">{item.rank.toLocaleString('tr-TR')}</Text>
+                    <Text className="text-lg font-bold text-blue-600 tracking-tight">
+                        {item.rank !== null ? item.rank.toLocaleString('tr-TR') : 'N/A'}
+                    </Text>
                 </View>
             </View>
 
             <View className="absolute right-3 z-10">
                 <TouchableOpacity
                     onPress={handleAddToList}
-                    className="bg-white p-2.5 rounded-xl border-2 border-slate-200"
+                    className="bg-white p-2.5 rounded-xl"
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     style={{
                         shadowColor: '#000',

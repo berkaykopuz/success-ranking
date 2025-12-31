@@ -6,16 +6,21 @@ export interface RankingItem {
     scoreType: string;
     year: number;
     score: number;
-    rank: number;
+    rank: number | null;
     quota: number;
     city: string;
+    language: string | null;
+    quotaType: string | null;
+    durationYears: number;
 }
 
 export interface RankingDetail extends RankingItem {
     history: {
         year: number;
         score: number;
-        rank: number;
+        rank: number | null;
+        yerlesen: number;
+        kontenjan: number;
     }[];
     description?: string;
     website?: string;
@@ -28,6 +33,7 @@ export interface FilterOptions {
     cities: string[];
     universities: string[];
     departments: string[];
+    quotaTypes: string[];
 }
 
 export interface FilterState {
@@ -37,6 +43,8 @@ export interface FilterState {
     city: string | null;
     university: string | null;
     department: string | null;
+    quotaType: string | null;
+    language: string[] | null;
     // New filters
     minScore: number | null;
     maxScore: number | null;

@@ -181,3 +181,10 @@ fix_*.patch
 
 expo-env.d.ts
 # @end expo-cli
+
+# Expo
+.expo/
+*.jks
+*.p12
+*.keystore
+*.aab

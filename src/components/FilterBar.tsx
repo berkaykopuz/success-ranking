@@ -5,13 +5,14 @@ import * as Haptics from 'expo-haptics'; // Optional: Add for better UX
 import { useFilterStore } from '../store/filterStore';
 import { FilterModal } from './FilterModal';
 
-const CATEGORIES = ['SAY', 'SÖZ', 'EA', 'DİL'];
+const CATEGORIES = ['SAY', 'SÖZ', 'EA', 'DİL', 'TYT'];
 
 const SUB_CATEGORIES: Record<string, string[]> = {
     'SAY': ['Mühendislik', 'Tıp', 'Mimarlık', 'Diş Hekimliği', 'Matematik'],
     'SÖZ': ['Tarih', 'Coğrafya', 'Edebiyat', 'Gazetecilik', 'İlahiyat'],
     'EA': ['Hukuk', 'İşletme', 'Psikoloji', 'PDR', 'Ekonomi'],
     'DİL': ['İngilizce Öğr.', 'Mütercim', 'Çeviribilim', 'Almanca', 'Fransızca'],
+    'TYT': [],
 };
 
 export const FilterBar = () => {
@@ -68,10 +69,10 @@ export const FilterBar = () => {
                     <Pressable
                         key={cat}
                         onPress={() => handleCategoryPress(cat)}
-                        className={`flex-1 py-4 justify-center items-center rounded-2xl border-2 shadow-sm ${
+                        className={`flex-1 py-5 px-3 justify-center items-center rounded-2xl shadow-sm ${
                             scoreType === cat
-                                ? 'bg-blue-600 border-blue-600 shadow-blue-200'
-                                : 'bg-white border-slate-200 shadow-slate-100'
+                                ? 'bg-blue-600 shadow-blue-200'
+                                : 'bg-white shadow-slate-100'
                         }`}
                         style={{
                             shadowColor: scoreType === cat ? '#3b82f6' : '#000',
@@ -92,7 +93,7 @@ export const FilterBar = () => {
                 ))}
 
                 <TouchableOpacity
-                    className="flex-row items-center justify-center bg-white p-3.5 rounded-2xl border-2 border-slate-200"
+                    className="flex-row items-center justify-center bg-white px-4 py-5 rounded-2xl border-2 border-slate-200"
                     onPress={() => {
                         Haptics.selectionAsync();
                         setFilterModalVisible(true);
@@ -129,10 +130,10 @@ export const FilterBar = () => {
                                 <TouchableOpacity
                                     key={sub}
                                     onPress={() => handleSubCategoryPress(sub)}
-                                    className={`px-5 py-2.5 rounded-full border-2 ${
+                                    className={`px-6 py-3.5 rounded-full ${
                                         isSelected
-                                            ? 'bg-blue-600 border-blue-600'
-                                            : 'bg-white border-slate-200'
+                                            ? 'bg-blue-600'
+                                            : 'bg-white'
                                     }`}
                                     style={{
                                         shadowColor: isSelected ? '#3b82f6' : '#000',
@@ -166,7 +167,7 @@ export const FilterBar = () => {
                 >
                     {year && (
                         <TouchableOpacity
-                            className="bg-indigo-100 px-4 py-2 rounded-full border-2 border-indigo-200 flex-row items-center"
+                            className="bg-indigo-100 px-5 py-3 rounded-full border-2 border-indigo-200 flex-row items-center"
                             onPress={() => {
                                 Haptics.selectionAsync();
                                 setFilter('year', null);
@@ -187,7 +188,7 @@ export const FilterBar = () => {
                     )}
                     {city && (
                         <TouchableOpacity
-                            className="bg-indigo-100 px-4 py-2 rounded-full border-2 border-indigo-200 flex-row items-center"
+                            className="bg-indigo-100 px-5 py-3 rounded-full border-2 border-indigo-200 flex-row items-center"
                             onPress={() => {
                                 Haptics.selectionAsync();
                                 setFilter('city', null);

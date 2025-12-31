@@ -23,6 +23,28 @@ interface NetInputs {
 type TYTState = Record<TYTSectionKey, NetInputs>;
 type AYTState = Record<AYTSectionKey, NetInputs>;
 
+// Maximum question limits for each subject
+const TYT_MAX_LIMITS: Record<TYTSectionKey, number> = {
+  turkce: 40,
+  matematik: 40,
+  sosyal: 20,
+  fen: 20,
+};
+
+const AYT_MAX_LIMITS: Record<AYTSectionKey, number> = {
+  aytMatematik: 40,
+  aytFizik: 14,
+  aytKimya: 13,
+  aytBiyoloji: 13,
+  aytEdebiyat: 24,
+  aytTarih1: 10,
+  aytCografya1: 6,
+  aytTarih2: 11,
+  aytCografya2: 11,
+  aytFelsefe: 12,
+  aytDin: 6,
+};
+
 const INITIAL_TYT_STATE: TYTState = {
   turkce: { correct: '', wrong: '' },
   matematik: { correct: '', wrong: '' },
@@ -165,21 +187,43 @@ export default function YksNetScreen() {
   const [calculationName, setCalculationName] = useState('');
 
   const handleTytChange = (key: TYTSectionKey, field: keyof NetInputs, text: string) => {
+    let cleanedText = text.replace(/[^0-9,\.]/g, '');
+    
+    // If changing the "correct" field, enforce max limit
+    if (field === 'correct' && cleanedText) {
+      const numValue = parseFloat(cleanedText.replace(',', '.')) || 0;
+      const maxLimit = TYT_MAX_LIMITS[key];
+      if (numValue > maxLimit) {
+        cleanedText = maxLimit.toString();
+      }
+    }
+    
     setTytValues((prev) => ({
       ...prev,
       [key]: {
         ...prev[key],
-        [field]: text.replace(/[^0-9,\.]/g, ''),
+        [field]: cleanedText,
       },
     }));
   };
 
   const handleAytChange = (key: AYTSectionKey, field: keyof NetInputs, text: string) => {
+    let cleanedText = text.replace(/[^0-9,\.]/g, '');
+    
+    // If changing the "correct" field, enforce max limit
+    if (field === 'correct' && cleanedText) {
+      const numValue = parseFloat(cleanedText.replace(',', '.')) || 0;
+      const maxLimit = AYT_MAX_LIMITS[key];
+      if (numValue > maxLimit) {
+        cleanedText = maxLimit.toString();
+      }
+    }
+    
     setAytValues((prev) => ({
       ...prev,
       [key]: {
         ...prev[key],
-        [field]: text.replace(/[^0-9,\.]/g, ''),
+        [field]: cleanedText,
       },
     }));
   };

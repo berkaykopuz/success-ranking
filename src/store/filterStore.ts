@@ -14,6 +14,8 @@ const initialState: FilterState = {
     city: null,
     university: null,
     department: null,
+    quotaType: null,
+    language: null,
     minScore: null,
     maxScore: null,
     minRank: null,

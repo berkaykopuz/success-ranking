@@ -25,6 +25,24 @@ export default function RankingDetailScreen() {
         setIsListModalVisible(true);
     };
 
+    // Format department name with language and quota type
+    const formatDepartmentName = () => {
+        if (!data) return '';
+        let formatted = data.departmentName;
+        
+        // Add language in parentheses if available
+        if (data.language) {
+            formatted += ` (${data.language})`;
+        }
+        
+        // Add quota type in parentheses if available
+        if (data.quotaType) {
+            formatted += ` (${data.quotaType})`;
+        }
+        
+        return formatted;
+    };
+
     if (isLoading) {
         return (
             <View className="flex-1 justify-center items-center bg-white">
@@ -62,7 +80,7 @@ export default function RankingDetailScreen() {
                     </TouchableOpacity>
                 </View>
                 <Text className="text-white text-3xl font-bold leading-tight tracking-tight mb-2">{data.universityName}</Text>
-                <Text className="text-blue-100 text-lg font-medium">{data.departmentName}</Text>
+                <Text className="text-blue-100 text-lg font-medium">{formatDepartmentName()}</Text>
                 <View className="flex-row items-center mt-3">
                     <View className="bg-blue-600 px-3 py-1.5 rounded-lg mr-2 shadow-sm">
                         <Text className="text-white text-xs font-bold uppercase tracking-wider">{data.scoreType}</Text>
@@ -74,21 +92,33 @@ export default function RankingDetailScreen() {
             <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Info Cards */}
                 <View className="flex-row flex-wrap p-4 gap-3 -mt-4">
-                    <View className="w-[48%] bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                        <Text className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">Sıralama</Text>
-                        <Text className="text-2xl font-bold text-slate-800">#{data.rank}</Text>
+                    <View className="w-[48%] bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <Text className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-2">Sıralama</Text>
+                        <Text className="text-2xl font-bold text-slate-800">
+                            {data.rank !== null ? `${data.rank.toLocaleString('tr-TR')}` : 'N/A'}
+                        </Text>
                     </View>
-                    <View className="w-[48%] bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                        <Text className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">Puan</Text>
+                    <View className="w-[48%] bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <Text className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-2">Puan</Text>
                         <Text className="text-2xl font-bold text-slate-800">{data.score.toFixed(2)}</Text>
                     </View>
-                    <View className="w-[48%] bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                        <Text className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">Kontenjan</Text>
+                    <View className="w-[48%] bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <Text className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-2">Kontenjan</Text>
                         <Text className="text-2xl font-bold text-slate-800">{data.quota}</Text>
                     </View>
-                    <View className="w-[48%] bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                        <Text className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">Yıl</Text>
+                    <View className="w-[48%] bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <Text className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-2">Yıl</Text>
                         <Text className="text-2xl font-bold text-slate-800">{data.year}</Text>
+                    </View>
+                    <View className="w-[48%] bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <Text className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-2">ÖĞRENİM SÜRESİ</Text>
+                        <Text className="text-2xl font-bold text-slate-800">{data.durationYears} Yıl</Text>
+                    </View>
+                    <View className="w-[48%] bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <Text className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-2">LİSANS DURUMU</Text>
+                        <Text className="text-2xl font-bold text-slate-800">
+                            {data.durationYears === 2 ? 'Önlisans' : 'Lisans'}
+                        </Text>
                     </View>
                 </View>
 
@@ -97,15 +127,21 @@ export default function RankingDetailScreen() {
                     <Text className="text-lg font-bold text-slate-800 mb-3 px-1">Sıralama Geçmişi</Text>
                     <View className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
                         <View className="flex-row bg-slate-50 border-b border-slate-100 p-3.5">
-                            <Text className="flex-1 font-semibold text-slate-500 text-xs uppercase tracking-wide">Yıl</Text>
+                            <Text className="flex-1 font-semibold text-slate-500 text-xs uppercase tracking-wide text-left">Yıl</Text>
+                            <Text className="flex-1 font-semibold text-slate-500 text-xs uppercase tracking-wide text-center">Puan</Text>
                             <Text className="flex-1 font-semibold text-slate-500 text-xs uppercase tracking-wide text-center">Sıralama</Text>
-                            <Text className="flex-1 font-semibold text-slate-500 text-xs uppercase tracking-wide text-right">Puan</Text>
+                            <Text className="flex-1 font-semibold text-slate-500 text-xs uppercase tracking-wide text-center">Kontenjan</Text>
                         </View>
                         {data.history.map((h, i) => (
                             <View key={h.year} className={`flex-row p-3.5 ${i !== data.history.length - 1 ? 'border-b border-slate-50' : ''}`}>
-                                <Text className="flex-1 text-slate-700 text-sm font-medium">{h.year}</Text>
-                                <Text className="flex-1 text-slate-700 text-sm font-medium text-center">#{h.rank}</Text>
-                                <Text className="flex-1 text-slate-700 text-sm font-medium text-right">{h.score.toFixed(2)}</Text>
+                                <Text className="flex-1 text-slate-700 text-sm font-medium text-left">{h.year}</Text>
+                                <Text className="flex-1 text-slate-700 text-sm font-medium text-center">{h.score.toFixed(2)}</Text>
+                                <Text className="flex-1 text-slate-700 text-sm font-medium text-center">
+                                    {h.rank !== null ? `${h.rank.toLocaleString('tr-TR')}` : 'N/A'}
+                                </Text>
+                                <Text className="flex-1 text-slate-700 text-sm font-medium text-center">
+                                    {h.kontenjan}/{h.yerlesen}
+                                </Text>
                             </View>
                         ))}
                     </View>

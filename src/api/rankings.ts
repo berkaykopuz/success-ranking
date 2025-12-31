@@ -1,62 +1,61 @@
-import rawData from '../../outputjson.json';
+import application from '../../outputjson.json';
 import { FilterOptions, FilterState, RankingDetail, RankingItem } from '../types/ranking';
 
 // Define the shape of the raw JSON item
+interface YearData {
+    year: number;
+    kontenjan: number;
+    yerlesen: number;
+    taban_puan: number;
+    basari_sirasi: number | null;
+    status: string;
+}
+
 interface RawRankingItem {
-    ProgramCode: string;
-    UniversityType: string;
-    UniversityName: string;
-    FacultyName: string;
-    ProgramName: string;
-    ScoreType: string;
-    General: {
-        Quota: number;
-        Placed: number;
-        MinScore: number | null;
-        MaxScore: number | null;
-    };
-    // ... other fields can be ignored for now
+    university_id: number;
+    university_name: string;
+    location_city: string;
+    campus: string | null;
+    university_type: string;
+    faculty: string;
+    program_id: number;
+    program_name: string;
+    language: string;
+    duration_years: number;
+    score_type: string;
+    quota_type: string | null;
+    years: YearData[];
 }
 
 // 1. Pre-process data: Parse and Normalize
-const processedData: RankingItem[] = (rawData as unknown as RawRankingItem[])
-    .map((item) => {
-        // Extract city from UniversityName "UNIVERSITY (CITY)"
-        const cityMatch = item.UniversityName.match(/\(([^)]+)\)$/);
-        const city = cityMatch ? cityMatch[1] : 'Bilinmiyor';
-        const universityName = item.UniversityName.replace(/\s*\([^)]+\)$/, '');
+// Create one RankingItem per program-year combination, using 2025 data if available, otherwise most recent year
+const processedData: RankingItem[] = (application as unknown as RawRankingItem[])
+    .flatMap((item) => {
+        // Prioritize 2025, then get the most recent year data
+        const year2025 = item.years.find(y => y.year === 2025);
+        const latestYearData = year2025 || [...item.years].sort((a, b) => b.year - a.year)[0];
+        
+        if (!latestYearData || !latestYearData.taban_puan || latestYearData.taban_puan <= 0) {
+            return [];
+        }
 
         return {
-            id: item.ProgramCode,
-            universityName: universityName,
-            departmentName: item.ProgramName,
-            faculty: item.FacultyName,
-            scoreType: item.ScoreType,
-            year: 2024, // Default year as it's missing in JSON
-            score: item.General.MinScore || 0,
-            rank: 0, // Placeholder, will calculate below
-            quota: item.General.Quota,
-            city: city,
+            id: item.program_id.toString(),
+            universityName: item.university_name,
+            departmentName: item.program_name,
+            faculty: item.faculty,
+            scoreType: item.score_type,
+            year: latestYearData.year,
+            score: latestYearData.taban_puan,
+            rank: latestYearData.basari_sirasi, // Use basari_sirasi from the year data
+            quota: latestYearData.kontenjan,
+            city: item.location_city,
+            language: item.language || null,
+            quotaType: item.quota_type || null,
+            durationYears: item.duration_years,
         };
     })
     .filter(item => item.score > 0); // Remove items without valid score
-
-// 2. Pre-process data: Calculate Global Ranks per ScoreType
-// Identify unique score types
-const scoreTypes = Array.from(new Set(processedData.map(d => d.scoreType)));
-
-// Create a map to store ranked lists for faster access if needed, 
-// or just update rank in the main array.
-scoreTypes.forEach(type => {
-    // Get items of this type
-    const items = processedData.filter(d => d.scoreType === type);
-    // Sort by score descending
-    items.sort((a, b) => b.score - a.score);
-    // Assign rank
-    items.forEach((item, index) => {
-        item.rank = index + 1;
-    });
-});
 
 // Helper for search
 const matchesSearch = (item: RankingItem, query: string) => {
@@ -82,8 +81,38 @@ export const fetchRankings = async (
 
     let filtered = processedData;
 
-    // Apply Filters
-    // Apply Filters
+    // If year filter is specified, we need to process data for that specific year
+    if (filters.year !== null) {
+        const rawData = application as unknown as RawRankingItem[];
+        const yearFilteredData: RankingItem[] = rawData
+            .flatMap((item) => {
+                // Find the year data for the specified year
+                const yearData = item.years.find(y => y.year === filters.year);
+                
+                if (!yearData || !yearData.taban_puan || yearData.taban_puan <= 0) {
+                    return [];
+                }
+
+                return {
+                    id: item.program_id.toString(),
+                    universityName: item.university_name,
+                    departmentName: item.program_name,
+                    faculty: item.faculty,
+                    scoreType: item.score_type,
+                    year: yearData.year,
+                    score: yearData.taban_puan,
+                    rank: yearData.basari_sirasi, // Use basari_sirasi from the year data
+                    quota: yearData.kontenjan,
+                    city: item.location_city,
+                    language: item.language || null,
+                    quotaType: item.quota_type || null,
+                    durationYears: item.duration_years,
+                };
+            })
+            .filter(item => item.score > 0);
+
+        filtered = yearFilteredData;
+    }
     if (filters.scoreType) {
         filtered = filtered.filter(item => item.scoreType === filters.scoreType);
     }
@@ -107,6 +136,22 @@ export const fetchRankings = async (
             filtered = filtered.filter(item => item.departmentName.toLocaleLowerCase('tr-TR').includes(deptFilter));
         }
     }
+    if (filters.quotaType) {
+        if (filters.quotaType === 'Devlet') {
+            filtered = filtered.filter(item => item.quotaType === null);
+        } else if (filters.quotaType === 'Vakif') {
+            filtered = filtered.filter(item => item.quotaType !== null);
+        }
+    }
+    if (filters.language && filters.language.length > 0) {
+        filtered = filtered.filter(item => {
+            // If language is null in data, it means Türkçe
+            // Check if Türkçe is selected and item language is null, or if item language matches selected languages
+            const isTurkce = item.language === null && filters.language!.includes('Türkçe');
+            const matchesOtherLanguage = item.language !== null && filters.language!.includes(item.language);
+            return isTurkce || matchesOtherLanguage;
+        });
+    }
     if (filters.searchQuery) {
         filtered = filtered.filter(item => matchesSearch(item, filters.searchQuery));
     }
@@ -117,10 +162,10 @@ export const fetchRankings = async (
         filtered = filtered.filter(item => item.score <= (filters.maxScore as number));
     }
     if (filters.minRank !== null) {
-        filtered = filtered.filter(item => item.rank >= (filters.minRank as number));
+        filtered = filtered.filter(item => item.rank !== null && item.rank >= (filters.minRank as number));
     }
     if (filters.maxRank !== null) {
-        filtered = filtered.filter(item => item.rank <= (filters.maxRank as number));
+        filtered = filtered.filter(item => item.rank !== null && item.rank <= (filters.maxRank as number));
     }
 
     // Apply Sorting
@@ -132,8 +177,10 @@ export const fetchRankings = async (
         let valA: any = a[sortBy as keyof RankingItem];
         let valB: any = b[sortBy as keyof RankingItem];
 
-        // Handle specific fields if needed, but score, rank, quota, year are all numbers
-        // except year is number.
+        // Handle null values - place them at the end
+        if (valA === null && valB === null) return 0;
+        if (valA === null) return 1; // null goes to end
+        if (valB === null) return -1; // null goes to end
 
         if (typeof valA === 'string') {
             valA = valA.toLocaleLowerCase('tr-TR');
@@ -166,19 +213,29 @@ export const fetchRankings = async (
 };
 
 export const fetchFilterOptions = async (): Promise<FilterOptions> => {
-    // Extract unique options from processedData
-    const years = [2024]; // Static for now
+    // Extract unique options from processedData and raw data
+    const rawData = application as unknown as RawRankingItem[];
+    
+    // Extract all unique years from all programs
+    const allYears = new Set<number>();
+    rawData.forEach(item => {
+        item.years.forEach(yearData => allYears.add(yearData.year));
+    });
+    const years = Array.from(allYears).sort((a, b) => b - a);
+    
     const scoreTypes = Array.from(new Set(processedData.map(d => d.scoreType))).sort();
     const cities = Array.from(new Set(processedData.map(d => d.city))).sort();
     const universities = Array.from(new Set(processedData.map(d => d.universityName))).sort();
     const departments = Array.from(new Set(processedData.map(d => d.departmentName))).sort();
+    const quotaTypes = ['Devlet', 'Vakif'];
 
     return {
         years,
         scoreTypes,
         cities,
         universities,
-        departments
+        departments,
+        quotaTypes
     };
 };
 
@@ -188,13 +245,26 @@ export const fetchRankingDetails = async (id: string): Promise<RankingDetail> =>
         throw new Error('Ranking not found');
     }
 
-    // Mock history and extra details since they are not in JSON
+    // Find the raw data item to get history
+    const rawData = application as unknown as RawRankingItem[];
+    const rawItem = rawData.find(d => d.program_id.toString() === id);
+    
+    // Build history from years array, sorted by year descending
+    const history = rawItem 
+        ? rawItem.years
+            .sort((a, b) => b.year - a.year)
+            .map(yearData => ({
+                year: yearData.year,
+                score: yearData.taban_puan,
+                rank: yearData.basari_sirasi,
+                yerlesen: yearData.yerlesen,
+                kontenjan: yearData.kontenjan,
+            }))
+        : [];
+
     return {
         ...item,
-        history: [
-            { year: 2023, score: item.score * 0.98, rank: item.rank + 5 },
-            { year: 2022, score: item.score * 0.95, rank: item.rank + 12 },
-        ],
+        history,
         description: `${item.universityName} - ${item.departmentName} programı.`,
         website: `https://www.${item.universityName.replace(/\s+/g, '').toLowerCase()}.edu.tr`,
     };
