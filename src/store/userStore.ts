@@ -37,6 +37,7 @@ interface UserState {
     deleteList: (listId: string) => void;
     addItemToList: (listId: string, item: RankingItem) => void;
     removeItemFromList: (listId: string, itemId: string) => void;
+    reorderListItems: (listId: string, fromIndex: number, toIndex: number) => void;
     updateListName: (listId: string, newName: string) => void;
     isItemInList: (listId: string, itemId: string) => boolean;
     getListsContainingItem: (itemId: string) => PersonalList[];
@@ -102,6 +103,24 @@ export const useUserStore = create<UserState>()(
                             return {
                                 ...list,
                                 items: list.items.filter((item) => item.id !== itemId),
+                                updatedAt: Date.now(),
+                            };
+                        }
+                        return list;
+                    }),
+                }));
+            },
+
+            reorderListItems: (listId, fromIndex, toIndex) => {
+                set((state) => ({
+                    lists: state.lists.map((list) => {
+                        if (list.id === listId) {
+                            const newItems = [...list.items];
+                            const [removed] = newItems.splice(fromIndex, 1);
+                            newItems.splice(toIndex, 0, removed);
+                            return {
+                                ...list,
+                                items: newItems,
                                 updatedAt: Date.now(),
                             };
                         }

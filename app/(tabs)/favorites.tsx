@@ -1,5 +1,6 @@
 import { FlashList } from '@shopify/flash-list';
-import { Folder, Plus, ChevronRight, Trash2, Edit2, History, List, ArrowLeft } from 'lucide-react-native';
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
+import { Folder, Plus, ChevronRight, Trash2, Edit2, History, List, ArrowLeft, GripVertical } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
     Text,
@@ -29,6 +30,7 @@ export default function KisiselScreen() {
         deleteList,
         updateListName,
         removeItemFromList,
+        reorderListItems,
         getYKSCalculations,
         deleteYKSCalculation,
     } = useUserStore();
@@ -115,10 +117,25 @@ export default function KisiselScreen() {
         setViewMode('lists');
     };
 
-    const handleRemoveItem = (itemId: string) => {
+    const handleRemoveItem = (item: RankingItem) => {
         if (!selectedList) return;
-        Haptics.selectionAsync();
-        removeItemFromList(selectedList.id, itemId);
+        
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        Alert.alert(
+            'Bölümü Sil',
+            `"${item.departmentName}" bölümünü listeden silmek istediğinize emin misiniz?`,
+            [
+                { text: 'İptal', style: 'cancel' },
+                {
+                    text: 'Sil',
+                    style: 'destructive',
+                    onPress: () => {
+                        Haptics.selectionAsync();
+                        removeItemFromList(selectedList.id, item.id);
+                    },
+                },
+            ]
+        );
     };
 
     const renderListItem = useCallback(
@@ -169,19 +186,35 @@ export default function KisiselScreen() {
     );
 
     const renderRankingItem = useCallback(
-        ({ item }: { item: RankingItem }) => (
-            <View className="relative">
-                <RankingCard item={item} router={router} />
-                <TouchableOpacity
-                    onPress={() => handleRemoveItem(item.id)}
-                    className="absolute top-0 left-4 bg-red-50 p-2 rounded-full border border-red-200 z-10"
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                    <Trash2 size={12} color="#ef4444" />
-                </TouchableOpacity>
-            </View>
+        ({ item, drag, isActive }: RenderItemParams<RankingItem>) => (
+            <ScaleDecorator>
+                <View className="relative">
+                    <TouchableOpacity
+                        onLongPress={drag}
+                        disabled={isActive}
+                        activeOpacity={0.7}
+                        className={isActive ? 'opacity-80' : ''}
+                    >
+                        <View className="flex-row items-center">
+                            <View className="pl-2 pr-1 py-5">
+                                <GripVertical size={20} color="#94a3b8" />
+                            </View>
+                            <View className="flex-1 relative">
+                                <RankingCard item={item} router={router} />
+                                <TouchableOpacity
+                                    onPress={() => handleRemoveItem(item)}
+                                    className="absolute top-0 left-4 bg-red-50 p-2 rounded-full border border-red-200 z-10"
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <Trash2 size={12} color="#ef4444" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </ScaleDecorator>
         ),
-        [selectedList, lists]
+        [selectedList, lists, router]
     );
 
     const renderEmptyLists = () => (
@@ -472,27 +505,27 @@ export default function KisiselScreen() {
                             </View>
                         </View>
                         <Text className="text-xs text-slate-500 mb-4 ml-0">
-                            Başlangıç: 145.47 | 2025 katsayıları
+                            Başlangıç: 145.47
                         </Text>
 
                         <ReadOnlySectionRow
                             label="Türkçe"
-                            help="40 soru • Katsayı: 2.83"
+                            help="40 soru"
                             value={selectedCalculation.tytValues.turkce}
                         />
                         <ReadOnlySectionRow
                             label="Temel Matematik"
-                            help="40 soru • Katsayı: 3.28"
+                            help="40 soru"
                             value={selectedCalculation.tytValues.matematik}
                         />
                         <ReadOnlySectionRow
                             label="Sosyal Bilimler"
-                            help="20 soru • Katsayı: 2.99"
+                            help="20 soru"
                             value={selectedCalculation.tytValues.sosyal}
                         />
                         <ReadOnlySectionRow
                             label="Fen Bilimleri"
-                            help="20 soru • Katsayı: 2.53"
+                            help="20 soru"
                             value={selectedCalculation.tytValues.fen}
                         />
 
@@ -517,27 +550,27 @@ export default function KisiselScreen() {
                             </View>
                         </View>
                         <Text className="text-xs text-slate-500 mb-4 ml-0">
-                            Başlangıç: 132.87 | 2025 katsayıları
+                            Başlangıç: 132.87
                         </Text>
 
                         <ReadOnlySectionRow
                             label="AYT Matematik"
-                            help="Katsayı: 2.89"
+                            help=""
                             value={selectedCalculation.aytValues.aytMatematik}
                         />
                         <ReadOnlySectionRow
                             label="Fizik"
-                            help="Katsayı: 2.46"
+                            help=""
                             value={selectedCalculation.aytValues.aytFizik}
                         />
                         <ReadOnlySectionRow
                             label="Kimya"
-                            help="Katsayı: 2.53"
+                            help=""
                             value={selectedCalculation.aytValues.aytKimya}
                         />
                         <ReadOnlySectionRow
                             label="Biyoloji"
-                            help="Katsayı: 2.61"
+                            help=""
                             value={selectedCalculation.aytValues.aytBiyoloji}
                         />
 
@@ -562,27 +595,27 @@ export default function KisiselScreen() {
                             </View>
                         </View>
                         <Text className="text-xs text-slate-500 mb-4 ml-0">
-                            Başlangıç: 129.34 | 2025 katsayıları
+                            Başlangıç: 129.34
                         </Text>
 
                         <ReadOnlySectionRow
                             label="AYT Matematik"
-                            help="Katsayı: 2.88"
+                            help=""
                             value={selectedCalculation.aytValues.aytMatematik}
                         />
                         <ReadOnlySectionRow
                             label="Edebiyat"
-                            help="Katsayı: 2.94"
+                            help=""
                             value={selectedCalculation.aytValues.aytEdebiyat}
                         />
                         <ReadOnlySectionRow
                             label="Tarih-1"
-                            help="Katsayı: 2.53"
+                            help=""
                             value={selectedCalculation.aytValues.aytTarih1}
                         />
                         <ReadOnlySectionRow
                             label="Coğrafya-1"
-                            help="Katsayı: 2.85"
+                            help=""
                             value={selectedCalculation.aytValues.aytCografya1}
                         />
 
@@ -607,42 +640,42 @@ export default function KisiselScreen() {
                             </View>
                         </View>
                         <Text className="text-xs text-slate-500 mb-4 ml-0">
-                            Başlangıç: 129.61 | 2025 katsayıları
+                            Başlangıç: 129.61
                         </Text>
 
                         <ReadOnlySectionRow
                             label="Edebiyat"
-                            help="Katsayı: 2.79"
+                            help=""
                             value={selectedCalculation.aytValues.aytEdebiyat}
                         />
                         <ReadOnlySectionRow
                             label="Tarih-1"
-                            help="Katsayı: 2.39"
+                            help=""
                             value={selectedCalculation.aytValues.aytTarih1}
                         />
                         <ReadOnlySectionRow
                             label="Coğrafya-1"
-                            help="Katsayı: 2.70"
+                            help=""
                             value={selectedCalculation.aytValues.aytCografya1}
                         />
                         <ReadOnlySectionRow
                             label="Tarih-2"
-                            help="Katsayı: 3.80"
+                            help=""
                             value={selectedCalculation.aytValues.aytTarih2}
                         />
                         <ReadOnlySectionRow
                             label="Coğrafya-2"
-                            help="Katsayı: 2.47"
+                            help=""
                             value={selectedCalculation.aytValues.aytCografya2}
                         />
                         <ReadOnlySectionRow
                             label="Felsefe Grubu"
-                            help="Katsayı: 3.76"
+                            help=""
                             value={selectedCalculation.aytValues.aytFelsefe}
                         />
                         <ReadOnlySectionRow
                             label="Din Kültürü"
-                            help="Katsayı: 2.36"
+                            help=""
                             value={selectedCalculation.aytValues.aytDin}
                         />
 
@@ -789,10 +822,16 @@ export default function KisiselScreen() {
                     </View>
                 </View>
                 <View className="flex-1 bg-slate-50 pt-3">
-                    <FlashList
+                    <DraggableFlatList
                         data={currentList.items}
                         renderItem={renderRankingItem}
-                        estimatedItemSize={120}
+                        keyExtractor={(item) => item.id}
+                        onDragEnd={({ from, to }) => {
+                            if (from !== to && currentList) {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                reorderListItems(currentList.id, from, to);
+                            }
+                        }}
                         ListEmptyComponent={renderEmptyListDetail}
                         contentContainerStyle={{
                             paddingBottom: insets.bottom + 20,

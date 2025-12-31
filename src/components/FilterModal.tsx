@@ -197,8 +197,15 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                             <TouchableOpacity
                                                 key={item}
                                                 onPress={() => setLocalFilters(prev => ({ ...prev, sortBy: item as any }))}
-                                                className={`flex-1 py-4 px-2 rounded-xl border items-center justify-center ${index > 0 ? 'ml-1.5' : ''} ${isSelected ? 'bg-blue-600 border-blue-600' : 'bg-slate-50 border-slate-200'}`}
-                                                style={{ flex: 1 }}
+                                                className={`flex-1 py-4 px-2 rounded-xl items-center justify-center ${index > 0 ? 'ml-1.5' : ''} ${isSelected ? 'bg-blue-600' : 'bg-slate-50'}`}
+                                                style={{
+                                                    flex: 1,
+                                                    shadowColor: isSelected ? '#3b82f6' : '#000',
+                                                    shadowOffset: { width: 0, height: 2 },
+                                                    shadowOpacity: isSelected ? 0.2 : 0.05,
+                                                    shadowRadius: 4,
+                                                    elevation: isSelected ? 4 : 2,
+                                                }}
                                             >
                                                 <Text className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`}>
                                                     {labels[item]}
@@ -271,8 +278,15 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                                 <TouchableOpacity
                                                     key={item}
                                                     onPress={() => setLocalFilters(prev => ({ ...prev, quotaType: isSelected ? null : item }))}
-                                                    className={`flex-1 py-4 px-2 rounded-xl border items-center justify-center ${index > 0 ? 'ml-1.5' : ''} ${isSelected ? 'bg-blue-600 border-blue-600' : 'bg-slate-50 border-slate-200'}`}
-                                                    style={{ flex: 1 }}
+                                                    className={`flex-1 py-4 px-2 rounded-xl items-center justify-center ${index > 0 ? 'ml-1.5' : ''} ${isSelected ? 'bg-blue-600' : 'bg-slate-50'}`}
+                                                    style={{
+                                                        flex: 1,
+                                                        shadowColor: isSelected ? '#3b82f6' : '#000',
+                                                        shadowOffset: { width: 0, height: 2 },
+                                                        shadowOpacity: isSelected ? 0.2 : 0.05,
+                                                        shadowRadius: 4,
+                                                        elevation: isSelected ? 4 : 2,
+                                                    }}
                                                 >
                                                     <Text className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`}>
                                                         {item}
@@ -298,9 +312,16 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                                                 : [...prev.language, lang]
                                                         }));
                                                     }}
-                                                    className={`px-5 py-3 rounded-xl border items-center justify-center ${
-                                                        isSelected ? 'bg-blue-600 border-blue-600' : 'bg-slate-50 border-slate-200'
+                                                    className={`px-5 py-3 rounded-xl items-center justify-center ${
+                                                        isSelected ? 'bg-blue-600' : 'bg-slate-50'
                                                     }`}
+                                                    style={{
+                                                        shadowColor: isSelected ? '#3b82f6' : '#000',
+                                                        shadowOffset: { width: 0, height: 2 },
+                                                        shadowOpacity: isSelected ? 0.2 : 0.05,
+                                                        shadowRadius: 4,
+                                                        elevation: isSelected ? 4 : 2,
+                                                    }}
                                                 >
                                                     <View className="flex-row items-center">
                                                         {isSelected ? (
@@ -329,8 +350,15 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                 <View className="flex-row w-full mb-5">
                                     <TouchableOpacity
                                         onPress={() => setRangeType('puan')}
-                                        className={`flex-1 py-4 px-2 rounded-xl border items-center justify-center ${rangeType === 'puan' ? 'bg-blue-600 border-blue-600' : 'bg-slate-50 border-slate-200'}`}
-                                        style={{ flex: 1 }}
+                                        className={`flex-1 py-4 px-2 rounded-xl items-center justify-center ${rangeType === 'puan' ? 'bg-blue-600' : 'bg-slate-50'}`}
+                                        style={{
+                                            flex: 1,
+                                            shadowColor: rangeType === 'puan' ? '#3b82f6' : '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: rangeType === 'puan' ? 0.2 : 0.05,
+                                            shadowRadius: 4,
+                                            elevation: rangeType === 'puan' ? 4 : 2,
+                                        }}
                                     >
                                         <Text className={`text-sm font-semibold ${rangeType === 'puan' ? 'text-white' : 'text-slate-600'}`}>
                                             Puan Aralığı
@@ -338,8 +366,15 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                     </TouchableOpacity>
                                     <TouchableOpacity
                                         onPress={() => setRangeType('siralama')}
-                                        className={`flex-1 py-4 px-2 rounded-xl border items-center justify-center ml-1.5 ${rangeType === 'siralama' ? 'bg-blue-600 border-blue-600' : 'bg-slate-50 border-slate-200'}`}
-                                        style={{ flex: 1 }}
+                                        className={`flex-1 py-4 px-2 rounded-xl items-center justify-center ml-1.5 ${rangeType === 'siralama' ? 'bg-blue-600' : 'bg-slate-50'}`}
+                                        style={{
+                                            flex: 1,
+                                            shadowColor: rangeType === 'siralama' ? '#3b82f6' : '#000',
+                                            shadowOffset: { width: 0, height: 2 },
+                                            shadowOpacity: rangeType === 'siralama' ? 0.2 : 0.05,
+                                            shadowRadius: 4,
+                                            elevation: rangeType === 'siralama' ? 4 : 2,
+                                        }}
                                     >
                                         <Text className={`text-sm font-semibold ${rangeType === 'siralama' ? 'text-white' : 'text-slate-600'}`}>
                                             Sıralama Aralığı
@@ -389,13 +424,27 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                             <View className="flex-row gap-3">
                                 <TouchableOpacity
                                     onPress={handleClear}
-                                    className="flex-1 py-3 rounded-full border border-slate-200 items-center justify-center bg-white"
+                                    className="flex-1 py-3 rounded-full items-center justify-center bg-white"
+                                    style={{
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 2 },
+                                        shadowOpacity: 0.05,
+                                        shadowRadius: 4,
+                                        elevation: 2,
+                                    }}
                                 >
                                     <Text className="font-bold text-slate-600 text-sm">Temizle</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     onPress={handleApply}
-                                    className="flex-1 py-3 rounded-full bg-blue-600 items-center justify-center shadow-lg shadow-blue-200"
+                                    className="flex-1 py-3 rounded-full bg-blue-600 items-center justify-center"
+                                    style={{
+                                        shadowColor: '#3b82f6',
+                                        shadowOffset: { width: 0, height: 2 },
+                                        shadowOpacity: 0.2,
+                                        shadowRadius: 4,
+                                        elevation: 4,
+                                    }}
                                 >
                                     <Text className="font-bold text-white text-sm">Uygula</Text>
                                 </TouchableOpacity>

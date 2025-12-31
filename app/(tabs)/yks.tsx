@@ -73,7 +73,6 @@ const getNet = (inputs: NetInputs) => {
   return net < 0 ? 0 : net;
 };
 
-// 2025 YKS Katsayı Tablosu
 // TYT Ham Puan: 145.47 + (TrNet * 2.83) + (SosNet * 2.99) + (MatNet * 3.28) + (FenNet * 2.53)
 const calculateTYTHamPuan = (
   turkceNet: number,
@@ -393,10 +392,7 @@ export default function YksNetScreen() {
   return (
     <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
       <View className="px-5 py-4 border-b border-slate-100">
-        <Text className="text-3xl font-bold text-slate-800 tracking-tight">YKS Puan Hesaplama</Text>
-        <Text className="text-sm text-slate-500 mt-1">
-          2025 YKS Puan Hesaplama - Hassas katsayı tablosu
-        </Text>
+        <Text className="text-3xl font-bold text-slate-800 tracking-tight">YKS Puan Hesaplayıcı</Text>
       </View>
 
       <ScrollView
@@ -418,33 +414,33 @@ export default function YksNetScreen() {
             </View>
           </View>
           <Text className="text-xs text-slate-500 mb-4 ml-0">
-            Başlangıç: 145.47 | 2025 katsayıları
+            Başlangıç: 145.47
           </Text>
 
           <SectionRow
             label="Türkçe"
-            help="40 soru • Katsayı: 2.83"
+            help=""
             value={tytValues.turkce}
             onChangeCorrect={(t) => handleTytChange('turkce', 'correct', t)}
             onChangeWrong={(t) => handleTytChange('turkce', 'wrong', t)}
           />
           <SectionRow
             label="Temel Matematik"
-            help="40 soru • Katsayı: 3.28"
+            help=""
             value={tytValues.matematik}
             onChangeCorrect={(t) => handleTytChange('matematik', 'correct', t)}
             onChangeWrong={(t) => handleTytChange('matematik', 'wrong', t)}
           />
           <SectionRow
             label="Sosyal Bilimler"
-            help="20 soru • Katsayı: 2.99"
+            help=""
             value={tytValues.sosyal}
             onChangeCorrect={(t) => handleTytChange('sosyal', 'correct', t)}
             onChangeWrong={(t) => handleTytChange('sosyal', 'wrong', t)}
           />
           <SectionRow
             label="Fen Bilimleri"
-            help="20 soru • Katsayı: 2.53"
+            help=""
             value={tytValues.fen}
             onChangeCorrect={(t) => handleTytChange('fen', 'correct', t)}
             onChangeWrong={(t) => handleTytChange('fen', 'wrong', t)}
@@ -469,35 +465,38 @@ export default function YksNetScreen() {
               </View>
               <Text className="text-lg font-bold text-slate-800">Sayısal Alan</Text>
             </View>
+            <View className="items-end">
+              <Text className="text-[10px] text-slate-400 font-medium">80 soru • 180 dk</Text>
+            </View>
           </View>
           <Text className="text-xs text-slate-500 mb-4 ml-0">
-            Başlangıç: 132.87 | 2025 katsayıları
+            Başlangıç: 132.87
           </Text>
 
           <SectionRow
             label="AYT Matematik"
-            help="Katsayı: 2.89"
+            help=""
             value={aytValues.aytMatematik}
             onChangeCorrect={(t) => handleAytChange('aytMatematik', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytMatematik', 'wrong', t)}
           />
           <SectionRow
             label="Fizik"
-            help="Katsayı: 2.46"
+            help=""
             value={aytValues.aytFizik}
             onChangeCorrect={(t) => handleAytChange('aytFizik', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytFizik', 'wrong', t)}
           />
           <SectionRow
             label="Kimya"
-            help="Katsayı: 2.53"
+            help=""
             value={aytValues.aytKimya}
             onChangeCorrect={(t) => handleAytChange('aytKimya', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytKimya', 'wrong', t)}
           />
           <SectionRow
             label="Biyoloji"
-            help="Katsayı: 2.61"
+            help=""
             value={aytValues.aytBiyoloji}
             onChangeCorrect={(t) => handleAytChange('aytBiyoloji', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytBiyoloji', 'wrong', t)}
@@ -522,35 +521,38 @@ export default function YksNetScreen() {
               </View>
               <Text className="text-lg font-bold text-slate-800">Eşit Ağırlık Alan</Text>
             </View>
+            <View className="items-end">
+              <Text className="text-[10px] text-slate-400 font-medium">80 soru • 180 dk</Text>
+            </View>
           </View>
           <Text className="text-xs text-slate-500 mb-4 ml-0">
-            Başlangıç: 129.34 | 2025 katsayıları
+            Başlangıç: 129.34
           </Text>
 
           <SectionRow
             label="AYT Matematik"
-            help="Katsayı: 2.88"
+            help=""
             value={aytValues.aytMatematik}
             onChangeCorrect={(t) => handleAytChange('aytMatematik', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytMatematik', 'wrong', t)}
           />
           <SectionRow
             label="Edebiyat"
-            help="Katsayı: 2.94"
+            help=""
             value={aytValues.aytEdebiyat}
             onChangeCorrect={(t) => handleAytChange('aytEdebiyat', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytEdebiyat', 'wrong', t)}
           />
           <SectionRow
             label="Tarih-1"
-            help="Katsayı: 2.53"
+            help=""
             value={aytValues.aytTarih1}
             onChangeCorrect={(t) => handleAytChange('aytTarih1', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytTarih1', 'wrong', t)}
           />
           <SectionRow
             label="Coğrafya-1"
-            help="Katsayı: 2.85"
+            help=""
             value={aytValues.aytCografya1}
             onChangeCorrect={(t) => handleAytChange('aytCografya1', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytCografya1', 'wrong', t)}
@@ -575,56 +577,59 @@ export default function YksNetScreen() {
               </View>
               <Text className="text-lg font-bold text-slate-800">Sözel Alan</Text>
             </View>
+            <View className="items-end">
+              <Text className="text-[10px] text-slate-400 font-medium">80 soru • 180 dk</Text>
+            </View>
           </View>
           <Text className="text-xs text-slate-500 mb-4 ml-0">
-            Başlangıç: 129.61 | 2025 katsayıları
+            Başlangıç: 129.61
           </Text>
 
           <SectionRow
             label="Edebiyat"
-            help="Katsayı: 2.79"
+            help=""
             value={aytValues.aytEdebiyat}
             onChangeCorrect={(t) => handleAytChange('aytEdebiyat', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytEdebiyat', 'wrong', t)}
           />
           <SectionRow
             label="Tarih-1"
-            help="Katsayı: 2.39"
+            help=""
             value={aytValues.aytTarih1}
             onChangeCorrect={(t) => handleAytChange('aytTarih1', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytTarih1', 'wrong', t)}
           />
           <SectionRow
             label="Coğrafya-1"
-            help="Katsayı: 2.70"
+            help=""
             value={aytValues.aytCografya1}
             onChangeCorrect={(t) => handleAytChange('aytCografya1', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytCografya1', 'wrong', t)}
           />
           <SectionRow
             label="Tarih-2"
-            help="Katsayı: 3.80"
+            help=""
             value={aytValues.aytTarih2}
             onChangeCorrect={(t) => handleAytChange('aytTarih2', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytTarih2', 'wrong', t)}
           />
           <SectionRow
             label="Coğrafya-2"
-            help="Katsayı: 2.47"
+            help=""
             value={aytValues.aytCografya2}
             onChangeCorrect={(t) => handleAytChange('aytCografya2', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytCografya2', 'wrong', t)}
           />
           <SectionRow
             label="Felsefe Grubu"
-            help="Katsayı: 3.76"
+            help=""
             value={aytValues.aytFelsefe}
             onChangeCorrect={(t) => handleAytChange('aytFelsefe', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytFelsefe', 'wrong', t)}
           />
           <SectionRow
             label="Din Kültürü"
-            help="Katsayı: 2.36"
+            help=""
             value={aytValues.aytDin}
             onChangeCorrect={(t) => handleAytChange('aytDin', 'correct', t)}
             onChangeWrong={(t) => handleAytChange('aytDin', 'wrong', t)}
@@ -808,8 +813,7 @@ export default function YksNetScreen() {
 
           <View className="mt-4 pt-3 border-t border-slate-200">
             <Text className="text-[10px] text-slate-400 text-center leading-relaxed">
-              ⚠️ TYT puanının hesaplanması için Türkçe veya Matematik&apos;ten en az 0,5 net gerekir.{'\n'}
-              Hesaplama 2025 katsayı verilerine göre yapılmıştır.
+              ⚠️ TYT puanının hesaplanması için Türkçe veya Matematik&apos;ten en az 0,5 net gerekir.
             </Text>
           </View>
         </View>

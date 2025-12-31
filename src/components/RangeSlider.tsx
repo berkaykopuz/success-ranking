@@ -240,7 +240,7 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
                     <Text className="text-base font-bold text-blue-700">{formatValue(minValue)}</Text>
                 </View>
                 <View className="justify-center px-2">
-                    <View className="w-8 h-0.5 bg-slate-300 rounded-full" />
+                    <Text className="text-xl font-bold text-slate-400">-</Text>
                 </View>
                 <View 
                     className="flex-1 border border-blue-200 rounded-xl px-4 py-3 items-center"
