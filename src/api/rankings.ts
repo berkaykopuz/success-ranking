@@ -1,5 +1,6 @@
 import application from '../../outputjson.json';
 import { FilterOptions, FilterState, RankingDetail, RankingItem } from '../types/ranking';
+import { YKSCalculation } from '../store/userStore';
 
 // Define the shape of the raw JSON item
 interface YearData {
@@ -74,7 +75,8 @@ interface FetchRankingsResponse {
 
 export const fetchRankings = async (
     pageParam: number = 0,
-    filters: FilterState
+    filters: FilterState,
+    yksCalculation?: YKSCalculation | null
 ): Promise<FetchRankingsResponse> => {
     // Simulate network delay for realistic feel
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -166,6 +168,32 @@ export const fetchRankings = async (
     }
     if (filters.maxRank !== null) {
         filtered = filtered.filter(item => item.rank !== null && item.rank <= (filters.maxRank as number));
+    }
+
+    // YKS Calculation Filtering
+    if (yksCalculation) {
+        // Filter by all score types where user has a score and can win
+        const scoreTypeMap: Record<string, { score: number; scoreType: string }> = {
+            'TYT': { score: yksCalculation.tytYerlesme, scoreType: 'TYT' },
+            'SAY': { score: yksCalculation.sayYerlesme, scoreType: 'SAY' },
+            'EA': { score: yksCalculation.eaYerlesme, scoreType: 'EA' },
+            'SÖZ': { score: yksCalculation.sozYerlesme, scoreType: 'SÖZ' },
+        };
+
+        // Get all score types where user has a valid score (> 0)
+        const availableScores = Object.entries(scoreTypeMap)
+            .filter(([_, data]) => data.score > 0);
+
+        if (availableScores.length > 0) {
+            // Filter to show universities in any category where user can win
+            filtered = filtered.filter(item => {
+                const userScoreData = availableScores.find(([_, data]) => data.scoreType === item.scoreType);
+                if (!userScoreData) return false;
+                
+                // Show only universities where user's score >= university's score
+                return userScoreData[1].score >= item.score;
+            });
+        }
     }
 
     // Apply Sorting

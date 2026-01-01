@@ -91,7 +91,9 @@ export const RankingCard = React.memo(({ item, router }: Props) => {
                 </View>
                 <View className="items-center flex-1 border-l border-slate-200">
                     <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">Puan</Text>
-                    <Text className="text-sm font-semibold text-slate-700">{item.score.toFixed(4)}</Text>
+                    <Text className="text-sm font-semibold text-slate-700">
+                        {item.score != null ? item.score.toFixed(4) : 'N/A'}
+                    </Text>
                 </View>
             </View>
         </TouchableOpacity>

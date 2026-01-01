@@ -364,25 +364,31 @@ export default function KisiselScreen() {
                         <View className="items-center flex-1 border-r border-slate-200">
                             <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">TYT</Text>
                             <Text className="text-sm font-semibold text-slate-700">
-                                {item.tytHamPuan.toFixed(1).replace('.', ',')}
+                                {item.tytHamPuan.toFixed(3).replace('.', ',')}
                             </Text>
                         </View>
                         <View className="items-center flex-1">
                             <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">SAY</Text>
                             <Text className="text-sm font-semibold text-slate-700">
-                                {item.sayHamPuan > 0 ? item.sayHamPuan.toFixed(1).replace('.', ',') : '—'}
-                            </Text>
-                        </View>
-                        <View className="items-center flex-1 border-l border-slate-200">
-                            <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">EA</Text>
-                            <Text className="text-sm font-semibold text-slate-700">
-                                {item.eaHamPuan > 0 ? item.eaHamPuan.toFixed(1).replace('.', ',') : '—'}
+                                {item.sayHamPuan > 0 ? item.sayHamPuan.toFixed(3).replace('.', ',') : '—'}
                             </Text>
                         </View>
                         <View className="items-center flex-1 border-l border-slate-200">
                             <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">SÖZ</Text>
                             <Text className="text-sm font-semibold text-slate-700">
-                                {item.sozHamPuan > 0 ? item.sozHamPuan.toFixed(1).replace('.', ',') : '—'}
+                                {item.sozHamPuan > 0 ? item.sozHamPuan.toFixed(3).replace('.', ',') : '—'}
+                            </Text>
+                        </View>
+                        <View className="items-center flex-1 border-l border-slate-200">
+                            <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">EA</Text>
+                            <Text className="text-sm font-semibold text-slate-700">
+                                {item.eaHamPuan > 0 ? item.eaHamPuan.toFixed(3).replace('.', ',') : '—'}
+                            </Text>
+                        </View>
+                        <View className="items-center flex-1 border-l border-slate-200">
+                            <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">DİL</Text>
+                            <Text className="text-sm font-semibold text-slate-700">
+                                {item.dilHamPuan !== undefined && item.dilHamPuan > 0 ? item.dilHamPuan.toFixed(3).replace('.', ',') : '—'}
                             </Text>
                         </View>
                     </View>
@@ -472,6 +478,10 @@ export default function KisiselScreen() {
             getNetFromValue(selectedCalculation.aytValues.aytFelsefe) +
             getNetFromValue(selectedCalculation.aytValues.aytDin);
 
+        const aytYdtNet = selectedCalculation.aytValues.aytYdt 
+            ? getNetFromValue(selectedCalculation.aytValues.aytYdt) 
+            : 0;
+
         return (
             <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
                 <View className="px-5 py-4 border-b border-slate-100 flex-row items-center">
@@ -514,14 +524,14 @@ export default function KisiselScreen() {
                             value={selectedCalculation.tytValues.turkce}
                         />
                         <ReadOnlySectionRow
-                            label="Temel Matematik"
-                            help="40 soru"
-                            value={selectedCalculation.tytValues.matematik}
-                        />
-                        <ReadOnlySectionRow
                             label="Sosyal Bilimler"
                             help="20 soru"
                             value={selectedCalculation.tytValues.sosyal}
+                        />
+                        <ReadOnlySectionRow
+                            label="Temel Matematik"
+                            help="40 soru"
+                            value={selectedCalculation.tytValues.matematik}
                         />
                         <ReadOnlySectionRow
                             label="Fen Bilimleri"
@@ -689,6 +699,38 @@ export default function KisiselScreen() {
                         </View>
                     </View>
 
+                    {/* AYT Dil Card */}
+                    {selectedCalculation.aytValues.aytYdt && (
+                        <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                            <View className="flex-row items-center justify-between mb-2">
+                                <View className="flex-row items-center">
+                                    <View className="bg-rose-50 px-2.5 py-1 rounded-md mr-2">
+                                        <Text className="text-rose-700 font-bold text-[10px] tracking-wider uppercase">DİL</Text>
+                                    </View>
+                                    <Text className="text-lg font-bold text-slate-800">Yabancı Dil Alan</Text>
+                                </View>
+                            </View>
+                            <Text className="text-xs text-slate-500 mb-4 ml-0">
+                                Başlangıç: 105.92
+                            </Text>
+
+                            <ReadOnlySectionRow
+                                label="YDT (Yabancı Dil Testi)"
+                                help="80 soru"
+                                value={selectedCalculation.aytValues.aytYdt}
+                            />
+
+                            <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                                <View className="flex-row items-center justify-between">
+                                    <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">YDT Net</Text>
+                                    <Text className="text-lg font-bold text-rose-600 tracking-tight">
+                                        {aytYdtNet.toFixed(2).replace('.', ',')}
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
+                    )}
+
                     {/* Results Card */}
                     <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
                         <View className="flex-row items-center mb-4">
@@ -704,14 +746,14 @@ export default function KisiselScreen() {
                                 <View className="flex-row items-center justify-between mb-1">
                                     <Text className="text-xs text-blue-600 font-medium">Ham Puan</Text>
                                     <Text className="text-base font-bold text-blue-700">
-                                        {selectedCalculation.tytHamPuan.toFixed(1).replace('.', ',')}
+                                        {selectedCalculation.tytHamPuan.toFixed(3).replace('.', ',')}
                                     </Text>
                                 </View>
                                 {selectedCalculation.diplomaGrade && parseFloat(selectedCalculation.diplomaGrade) > 0 && (
                                     <View className="flex-row items-center justify-between pt-1 border-t border-blue-200">
                                         <Text className="text-xs text-blue-600 font-medium">Yerleştirme Puanı</Text>
                                         <Text className="text-base font-bold text-blue-700">
-                                            {selectedCalculation.tytYerlesme.toFixed(1).replace('.', ',')}
+                                            {selectedCalculation.tytYerlesme.toFixed(3).replace('.', ',')}
                                         </Text>
                                     </View>
                                 )}
@@ -725,14 +767,14 @@ export default function KisiselScreen() {
                                 <View className="flex-row items-center justify-between mb-1">
                                     <Text className="text-xs text-emerald-600 font-medium">Ham Puan</Text>
                                     <Text className="text-base font-bold text-emerald-700">
-                                        {selectedCalculation.sayHamPuan > 0 ? selectedCalculation.sayHamPuan.toFixed(1).replace('.', ',') : '—'}
+                                        {selectedCalculation.sayHamPuan > 0 ? selectedCalculation.sayHamPuan.toFixed(3).replace('.', ',') : '—'}
                                     </Text>
                                 </View>
                                 {selectedCalculation.diplomaGrade && parseFloat(selectedCalculation.diplomaGrade) > 0 && (
                                     <View className="flex-row items-center justify-between pt-1 border-t border-emerald-200">
                                         <Text className="text-xs text-emerald-600 font-medium">Yerleştirme Puanı</Text>
                                         <Text className="text-base font-bold text-emerald-700">
-                                            {selectedCalculation.sayYerlesme.toFixed(1).replace('.', ',')}
+                                            {selectedCalculation.sayYerlesme.toFixed(3).replace('.', ',')}
                                         </Text>
                                     </View>
                                 )}
@@ -746,14 +788,14 @@ export default function KisiselScreen() {
                                 <View className="flex-row items-center justify-between mb-1">
                                     <Text className="text-xs text-purple-600 font-medium">Ham Puan</Text>
                                     <Text className="text-base font-bold text-purple-700">
-                                        {selectedCalculation.eaHamPuan > 0 ? selectedCalculation.eaHamPuan.toFixed(1).replace('.', ',') : '—'}
+                                        {selectedCalculation.eaHamPuan > 0 ? selectedCalculation.eaHamPuan.toFixed(3).replace('.', ',') : '—'}
                                     </Text>
                                 </View>
                                 {selectedCalculation.diplomaGrade && parseFloat(selectedCalculation.diplomaGrade) > 0 && (
                                     <View className="flex-row items-center justify-between pt-1 border-t border-purple-200">
                                         <Text className="text-xs text-purple-600 font-medium">Yerleştirme Puanı</Text>
                                         <Text className="text-base font-bold text-purple-700">
-                                            {selectedCalculation.eaYerlesme.toFixed(1).replace('.', ',')}
+                                            {selectedCalculation.eaYerlesme.toFixed(3).replace('.', ',')}
                                         </Text>
                                     </View>
                                 )}
@@ -761,25 +803,48 @@ export default function KisiselScreen() {
                         </View>
 
                         {/* SÖZ Results */}
-                        <View className="mb-2">
+                        <View className="mb-4">
                             <Text className="text-sm font-bold text-slate-800 mb-2">SÖZ (Sözel) Puanı</Text>
                             <View className="bg-orange-50 px-3 py-2 rounded-xl border border-orange-200">
                                 <View className="flex-row items-center justify-between mb-1">
                                     <Text className="text-xs text-orange-600 font-medium">Ham Puan</Text>
                                     <Text className="text-base font-bold text-orange-700">
-                                        {selectedCalculation.sozHamPuan > 0 ? selectedCalculation.sozHamPuan.toFixed(1).replace('.', ',') : '—'}
+                                        {selectedCalculation.sozHamPuan > 0 ? selectedCalculation.sozHamPuan.toFixed(3).replace('.', ',') : '—'}
                                     </Text>
                                 </View>
                                 {selectedCalculation.diplomaGrade && parseFloat(selectedCalculation.diplomaGrade) > 0 && (
                                     <View className="flex-row items-center justify-between pt-1 border-t border-orange-200">
                                         <Text className="text-xs text-orange-600 font-medium">Yerleştirme Puanı</Text>
                                         <Text className="text-base font-bold text-orange-700">
-                                            {selectedCalculation.sozYerlesme.toFixed(1).replace('.', ',')}
+                                            {selectedCalculation.sozYerlesme.toFixed(3).replace('.', ',')}
                                         </Text>
                                     </View>
                                 )}
                             </View>
                         </View>
+
+                        {/* DİL Results */}
+                        {selectedCalculation.dilHamPuan !== undefined && (
+                            <View className="mb-2">
+                                <Text className="text-sm font-bold text-slate-800 mb-2">DİL (Yabancı Dil) Puanı</Text>
+                                <View className="bg-rose-50 px-3 py-2 rounded-xl border border-rose-200">
+                                    <View className="flex-row items-center justify-between mb-1">
+                                        <Text className="text-xs text-rose-600 font-medium">Ham Puan</Text>
+                                        <Text className="text-base font-bold text-rose-700">
+                                            {selectedCalculation.dilHamPuan > 0 ? selectedCalculation.dilHamPuan.toFixed(3).replace('.', ',') : '—'}
+                                        </Text>
+                                    </View>
+                                    {selectedCalculation.diplomaGrade && parseFloat(selectedCalculation.diplomaGrade) > 0 && selectedCalculation.dilYerlesme !== undefined && (
+                                        <View className="flex-row items-center justify-between pt-1 border-t border-rose-200">
+                                            <Text className="text-xs text-rose-600 font-medium">Yerleştirme Puanı</Text>
+                                            <Text className="text-base font-bold text-rose-700">
+                                                {selectedCalculation.dilYerlesme.toFixed(3).replace('.', ',')}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
+                            </View>
+                        )}
                     </View>
                 </ScrollView>
             </View>

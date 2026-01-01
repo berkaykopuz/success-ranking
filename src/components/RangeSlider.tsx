@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View, Text, PanResponder, Animated, TouchableWithoutFeedback, LayoutChangeEvent } from 'react-native';
+import { View, Text, TextInput, PanResponder, Animated, TouchableWithoutFeedback, LayoutChangeEvent } from 'react-native';
 
 interface RangeSliderProps {
     min: number;
@@ -43,6 +43,12 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
     const rafId = useRef<number | null>(null);
     const pendingValueChange = useRef<{ min: number; max: number } | null>(null);
     const startPosition = useRef<{ min: number; max: number }>({ min: 0, max: 0 });
+    
+    // State for editable inputs
+    const [minInputValue, setMinInputValue] = useState(formatValue(minValue));
+    const [maxInputValue, setMaxInputValue] = useState(formatValue(maxValue));
+    const [isMinFocused, setIsMinFocused] = useState(false);
+    const [isMaxFocused, setIsMaxFocused] = useState(false);
 
     React.useEffect(() => {
         // Only update if not dragging and position actually changed
@@ -59,6 +65,19 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
             lastMaxPosition.current = maxPosition;
         }
     }, [maxPosition, maxAnim]);
+
+    // Update input values when props change (but not when focused)
+    React.useEffect(() => {
+        if (!isMinFocused) {
+            setMinInputValue(formatValue(minValue));
+        }
+    }, [minValue, formatValue, isMinFocused]);
+
+    React.useEffect(() => {
+        if (!isMaxFocused) {
+            setMaxInputValue(formatValue(maxValue));
+        }
+    }, [maxValue, formatValue, isMaxFocused]);
 
     // Cleanup on unmount
     React.useEffect(() => {
@@ -215,6 +234,116 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
         }
     }, [minValue, maxValue, min, max, step, getValueFromPosition, onValueChange]);
 
+    // Parse formatted value back to number (remove commas, etc.)
+    const parseValue = useCallback((text: string): number | null => {
+        // Remove all non-numeric characters except decimal point and minus sign
+        const cleaned = text.replace(/[^\d.-]/g, '');
+        const parsed = parseFloat(cleaned);
+        return isNaN(parsed) ? null : parsed;
+    }, []);
+
+    // Handle min value input focus - show raw number
+    const handleMinInputFocus = useCallback(() => {
+        setIsMinFocused(true);
+        // Show raw numeric value when focusing
+        setMinInputValue(Math.round(minValue).toString());
+    }, [minValue]);
+
+    // Handle min value input change - allow free typing, only update slider for valid values
+    const handleMinInputChange = useCallback((text: string) => {
+        setMinInputValue(text);
+        const parsed = parseValue(text);
+        if (parsed !== null) {
+            // Strict limit: min cannot exceed maxValue - step
+            const maxAllowed = maxValue - step;
+            const minAllowed = min;
+            
+            // Only update slider if value is within valid range
+            // Don't auto-adjust the input field while typing - let user finish typing
+            if (parsed >= minAllowed && parsed <= maxAllowed) {
+                // Value is within valid range, update slider immediately
+                onValueChange(parsed, maxValue);
+            }
+            // If out of range, don't update slider - let user finish typing first
+        }
+    }, [maxValue, min, step, onValueChange, parseValue]);
+
+    // Handle min value input blur/end editing - auto-adjust if exceeds limits
+    const handleMinInputEnd = useCallback(() => {
+        setIsMinFocused(false);
+        const parsed = parseValue(minInputValue);
+        if (parsed !== null) {
+            // Final validation and clamping - auto-adjust if exceeds limits
+            const maxAllowed = maxValue - step;
+            const minAllowed = min;
+            let clampedValue = parsed;
+            
+            // Auto-adjust if exceeds limits
+            if (parsed > maxAllowed) {
+                clampedValue = maxAllowed;
+            } else if (parsed < minAllowed) {
+                clampedValue = minAllowed;
+            }
+            
+            onValueChange(clampedValue, maxValue);
+            setMinInputValue(formatValue(clampedValue));
+        } else {
+            // Reset to current value if invalid
+            setMinInputValue(formatValue(minValue));
+        }
+    }, [minInputValue, min, maxValue, step, onValueChange, parseValue, formatValue, minValue]);
+
+    // Handle max value input focus - show raw number
+    const handleMaxInputFocus = useCallback(() => {
+        setIsMaxFocused(true);
+        // Show raw numeric value when focusing
+        setMaxInputValue(Math.round(maxValue).toString());
+    }, [maxValue]);
+
+    // Handle max value input change - allow free typing, only update slider for valid values
+    const handleMaxInputChange = useCallback((text: string) => {
+        setMaxInputValue(text);
+        const parsed = parseValue(text);
+        if (parsed !== null) {
+            // Strict limit: max cannot go below minValue + step
+            const minAllowed = minValue + step;
+            const maxAllowed = max;
+            
+            // Only update slider if value is within valid range
+            // Don't auto-adjust the input field while typing - let user finish typing
+            if (parsed >= minAllowed && parsed <= maxAllowed) {
+                // Value is within valid range, update slider immediately
+                onValueChange(minValue, parsed);
+            }
+            // If out of range, don't update slider - let user finish typing first
+        }
+    }, [minValue, max, step, onValueChange, parseValue]);
+
+    // Handle max value input blur/end editing - auto-adjust if exceeds limits
+    const handleMaxInputEnd = useCallback(() => {
+        setIsMaxFocused(false);
+        const parsed = parseValue(maxInputValue);
+        if (parsed !== null) {
+            // Final validation and clamping - auto-adjust if exceeds limits
+            const minAllowed = minValue + step;
+            const maxAllowed = max;
+            let clampedValue = parsed;
+            
+            // Auto-adjust if exceeds limits
+            if (parsed < minAllowed) {
+                clampedValue = minAllowed;
+            } else if (parsed > maxAllowed) {
+                clampedValue = maxAllowed;
+            }
+            
+            onValueChange(minValue, clampedValue);
+            setMaxInputValue(formatValue(clampedValue));
+        } else {
+            // Reset to current value if invalid
+            setMaxInputValue(formatValue(maxValue));
+        }
+    }, [maxInputValue, max, minValue, step, onValueChange, parseValue, formatValue, maxValue]);
+
     return (
         <View className="w-full">
             {label && (
@@ -237,7 +366,17 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
                     }}
                 >
                     <Text className="text-xs font-semibold text-blue-500 mb-1 uppercase tracking-wide">MİNİMUM</Text>
-                    <Text className="text-base font-bold text-blue-700">{formatValue(minValue)}</Text>
+                    <TextInput
+                        value={minInputValue}
+                        onChangeText={handleMinInputChange}
+                        onFocus={handleMinInputFocus}
+                        onBlur={handleMinInputEnd}
+                        onEndEditing={handleMinInputEnd}
+                        keyboardType="numeric"
+                        selectTextOnFocus
+                        className="text-base font-bold text-blue-700 text-center"
+                        style={{ color: '#1e3a8a', padding: 0, minWidth: 60 }}
+                    />
                 </View>
                 <View className="justify-center px-2">
                     <Text className="text-xl font-bold text-slate-400">-</Text>
@@ -254,7 +393,17 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
                     }}
                 >
                     <Text className="text-xs font-semibold text-blue-500 mb-1 uppercase tracking-wide">MAKSİMUM</Text>
-                    <Text className="text-base font-bold text-blue-700">{formatValue(maxValue)}</Text>
+                    <TextInput
+                        value={maxInputValue}
+                        onChangeText={handleMaxInputChange}
+                        onFocus={handleMaxInputFocus}
+                        onBlur={handleMaxInputEnd}
+                        onEndEditing={handleMaxInputEnd}
+                        keyboardType="numeric"
+                        selectTextOnFocus
+                        className="text-base font-bold text-blue-700 text-center"
+                        style={{ color: '#1e3a8a', padding: 0, minWidth: 60 }}
+                    />
                 </View>
             </View>
 

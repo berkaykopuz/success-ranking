@@ -1,19 +1,27 @@
 import { FlashList } from '@shopify/flash-list';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fetchRankings } from '../../src/api/rankings';
 import { FilterBar } from '../../src/components/FilterBar';
 import { RankingCard } from '../../src/components/RankingCard';
 import { useFilterStore } from '../../src/store/filterStore';
+import { useUserStore } from '../../src/store/userStore';
 import { RankingItem } from '../../src/types/ranking';
 
 export default function RankingScreen() {
   const insets = useSafeAreaInsets();
   const filters = useFilterStore();
   const router = useRouter();
+  const { yksCalculations } = useUserStore();
+
+  // Get the selected YKS calculation
+  const selectedYksCalculation = useMemo(() => {
+    if (!filters.selectedYksCalculationId) return null;
+    return yksCalculations.find(calc => calc.id === filters.selectedYksCalculationId) || null;
+  }, [filters.selectedYksCalculationId, yksCalculations]);
 
   const {
     data,
@@ -24,8 +32,8 @@ export default function RankingScreen() {
     isError,
     refetch,
   } = useInfiniteQuery({
-    queryKey: ['rankings', filters],
-    queryFn: ({ pageParam = 0 }) => fetchRankings(pageParam as number, filters),
+    queryKey: ['rankings', filters, selectedYksCalculation?.id],
+    queryFn: ({ pageParam = 0 }) => fetchRankings(pageParam as number, filters, selectedYksCalculation),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
   });

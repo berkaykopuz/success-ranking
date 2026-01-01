@@ -22,6 +22,7 @@ const initialState: FilterState = {
     maxRank: null,
     sortBy: null,
     sortOrder: 'desc',
+    selectedYksCalculationId: null,
 };
 
 export const useFilterStore = create<FilterStore>((set) => ({

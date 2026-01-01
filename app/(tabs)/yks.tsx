@@ -13,7 +13,8 @@ type AYTSectionKey =
   | 'aytMatematik' 
   | 'aytFizik' | 'aytKimya' | 'aytBiyoloji'
   | 'aytEdebiyat' | 'aytTarih1' | 'aytCografya1'
-  | 'aytTarih2' | 'aytCografya2' | 'aytFelsefe' | 'aytDin';
+  | 'aytTarih2' | 'aytCografya2' | 'aytFelsefe' | 'aytDin'
+  | 'aytYdt';
 
 interface NetInputs {
   correct: string;
@@ -43,6 +44,7 @@ const AYT_MAX_LIMITS: Record<AYTSectionKey, number> = {
   aytCografya2: 11,
   aytFelsefe: 12,
   aytDin: 6,
+  aytYdt: 80,
 };
 
 const INITIAL_TYT_STATE: TYTState = {
@@ -64,6 +66,7 @@ const INITIAL_AYT_STATE: AYTState = {
   aytCografya2: { correct: '', wrong: '' },
   aytFelsefe: { correct: '', wrong: '' },
   aytDin: { correct: '', wrong: '' },
+  aytYdt: { correct: '', wrong: '' },
 };
 
 const getNet = (inputs: NetInputs) => {
@@ -175,6 +178,23 @@ const calculateSOZHamPuan = (
   return base + tytKatkisi + aytKatkisi;
 };
 
+// DİL Ham Puan: 105.92 + (TYT Türkçe Net × 1.53) + (TYT Sosyal Net × 1.62) + (TYT Mat Net × 1.77) + (TYT Fen Net × 1.37) + (YDT Dil Net × 2.60)
+const calculateDILHamPuan = (
+  turkceNet: number,
+  matNet: number,
+  sosyalNet: number,
+  fenNet: number,
+  ydtNet: number
+) => {
+  const base = 105.92;
+  return base + 
+    (turkceNet * 1.53) + 
+    (sosyalNet * 1.62) + 
+    (matNet * 1.77) + 
+    (fenNet * 1.37) + 
+    (ydtNet * 2.60);
+};
+
 export default function YksNetScreen() {
   const insets = useSafeAreaInsets();
   const { saveYKSCalculation } = useUserStore();
@@ -188,8 +208,8 @@ export default function YksNetScreen() {
   const handleTytChange = (key: TYTSectionKey, field: keyof NetInputs, text: string) => {
     let cleanedText = text.replace(/[^0-9,\.]/g, '');
     
-    // If changing the "correct" field, enforce max limit
-    if (field === 'correct' && cleanedText) {
+    // If changing the "correct" or "wrong" field, enforce max limit
+    if ((field === 'correct' || field === 'wrong') && cleanedText) {
       const numValue = parseFloat(cleanedText.replace(',', '.')) || 0;
       const maxLimit = TYT_MAX_LIMITS[key];
       if (numValue > maxLimit) {
@@ -209,8 +229,8 @@ export default function YksNetScreen() {
   const handleAytChange = (key: AYTSectionKey, field: keyof NetInputs, text: string) => {
     let cleanedText = text.replace(/[^0-9,\.]/g, '');
     
-    // If changing the "correct" field, enforce max limit
-    if (field === 'correct' && cleanedText) {
+    // If changing the "correct" or "wrong" field, enforce max limit
+    if ((field === 'correct' || field === 'wrong') && cleanedText) {
       const numValue = parseFloat(cleanedText.replace(',', '.')) || 0;
       const maxLimit = AYT_MAX_LIMITS[key];
       if (numValue > maxLimit) {
@@ -254,6 +274,7 @@ export default function YksNetScreen() {
   const aytCografya2Net = useMemo(() => getNet(aytValues.aytCografya2), [aytValues.aytCografya2]);
   const aytFelsefeNet = useMemo(() => getNet(aytValues.aytFelsefe), [aytValues.aytFelsefe]);
   const aytDinNet = useMemo(() => getNet(aytValues.aytDin), [aytValues.aytDin]);
+  const aytYdtNet = useMemo(() => getNet(aytValues.aytYdt), [aytValues.aytYdt]);
 
   // AYT Total Netleri
   const aytSayTotalNet = useMemo(
@@ -326,6 +347,18 @@ export default function YksNetScreen() {
     );
   }, [passesBaraj, turkceNet, matematikNet, sosyalNet, fenNet, aytEdebiyatNet, aytTarih1Net, aytCografya1Net, aytTarih2Net, aytCografya2Net, aytFelsefeNet, aytDinNet]);
 
+  // DİL Ham Puan
+  const dilHamPuan = useMemo(() => {
+    if (!passesBaraj) return 0;
+    return calculateDILHamPuan(
+      turkceNet,
+      matematikNet,
+      sosyalNet,
+      fenNet,
+      aytYdtNet
+    );
+  }, [passesBaraj, turkceNet, matematikNet, sosyalNet, fenNet, aytYdtNet]);
+
   // Diploma notu
   const diplomaNotu = useMemo(() => {
     return parseFloat(diplomaGrade.replace(',', '.')) || 0;
@@ -346,6 +379,7 @@ export default function YksNetScreen() {
   const sayYerlesme = useMemo(() => sayHamPuan + obpEkPuan, [sayHamPuan, obpEkPuan]);
   const eaYerlesme = useMemo(() => eaHamPuan + obpEkPuan, [eaHamPuan, obpEkPuan]);
   const sozYerlesme = useMemo(() => sozHamPuan + obpEkPuan, [sozHamPuan, obpEkPuan]);
+  const dilYerlesme = useMemo(() => dilHamPuan + obpEkPuan, [dilHamPuan, obpEkPuan]);
 
   const handleSave = () => {
     if (!passesBaraj) {
@@ -372,10 +406,12 @@ export default function YksNetScreen() {
       sayHamPuan,
       eaHamPuan,
       sozHamPuan,
+      dilHamPuan: dilHamPuan || 0,
       tytYerlesme,
       sayYerlesme,
       eaYerlesme,
       sozYerlesme,
+      dilYerlesme: dilYerlesme || 0,
     });
 
     Alert.alert('Başarılı', 'Hesaplama kaydedildi!', [
@@ -425,18 +461,18 @@ export default function YksNetScreen() {
             onChangeWrong={(t) => handleTytChange('turkce', 'wrong', t)}
           />
           <SectionRow
-            label="Temel Matematik"
-            help=""
-            value={tytValues.matematik}
-            onChangeCorrect={(t) => handleTytChange('matematik', 'correct', t)}
-            onChangeWrong={(t) => handleTytChange('matematik', 'wrong', t)}
-          />
-          <SectionRow
             label="Sosyal Bilimler"
             help=""
             value={tytValues.sosyal}
             onChangeCorrect={(t) => handleTytChange('sosyal', 'correct', t)}
             onChangeWrong={(t) => handleTytChange('sosyal', 'wrong', t)}
+          />
+          <SectionRow
+            label="Temel Matematik"
+            help=""
+            value={tytValues.matematik}
+            onChangeCorrect={(t) => handleTytChange('matematik', 'correct', t)}
+            onChangeWrong={(t) => handleTytChange('matematik', 'wrong', t)}
           />
           <SectionRow
             label="Fen Bilimleri"
@@ -628,7 +664,7 @@ export default function YksNetScreen() {
             onChangeWrong={(t) => handleAytChange('aytFelsefe', 'wrong', t)}
           />
           <SectionRow
-            label="Din Kültürü"
+            label="Din Kültürü / İlave Felsefe"
             help=""
             value={aytValues.aytDin}
             onChangeCorrect={(t) => handleAytChange('aytDin', 'correct', t)}
@@ -640,6 +676,41 @@ export default function YksNetScreen() {
               <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam AYT Net</Text>
               <Text className="text-lg font-bold text-orange-600 tracking-tight">
                 {aytSozTotalNet.toFixed(2).replace('.', ',')}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* AYT Dil Card */}
+        <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+          <View className="flex-row items-center justify-between mb-2">
+            <View className="flex-row items-center">
+              <View className="bg-rose-50 px-2.5 py-1 rounded-md mr-2">
+                <Text className="text-rose-700 font-bold text-[10px] tracking-wider uppercase">DİL</Text>
+              </View>
+              <Text className="text-lg font-bold text-slate-800">Yabancı Dil Alan</Text>
+            </View>
+            <View className="items-end">
+              <Text className="text-[10px] text-slate-400 font-medium">80 soru • 120 dk</Text>
+            </View>
+          </View>
+          <Text className="text-xs text-slate-500 mb-4 ml-0">
+            Başlangıç: 105.92
+          </Text>
+
+          <SectionRow
+            label="YDT (Yabancı Dil Testi)"
+            help=""
+            value={aytValues.aytYdt}
+            onChangeCorrect={(t) => handleAytChange('aytYdt', 'correct', t)}
+            onChangeWrong={(t) => handleAytChange('aytYdt', 'wrong', t)}
+          />
+
+          <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">YDT Net</Text>
+              <Text className="text-lg font-bold text-rose-600 tracking-tight">
+                {aytYdtNet.toFixed(2).replace('.', ',')}
               </Text>
             </View>
           </View>
@@ -679,7 +750,7 @@ export default function YksNetScreen() {
               >
                 {kirikOBP && <Text className="text-white text-xs">✓</Text>}
               </View>
-              <Text className="text-sm text-slate-700">Kırık OBP (0.3 katsayı)</Text>
+              <Text className="text-sm text-slate-700">Önceki Sene Yerleştim</Text>
             </TouchableOpacity>
             <Text className="text-xs text-slate-500">
               Yerleştirme Puanı = Ham Puan + (Diploma Notu × {obpKatsayisi.toFixed(1)})
@@ -691,7 +762,7 @@ export default function YksNetScreen() {
               <View className="flex-row items-center justify-between">
                 <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">OBP Ek Puanı</Text>
                 <Text className="text-lg font-bold text-indigo-600 tracking-tight">
-                  {obpEkPuan.toFixed(1).replace('.', ',')}
+                  {obpEkPuan.toFixed(3).replace('.', ',')}
                 </Text>
               </View>
             </View>
@@ -728,14 +799,14 @@ export default function YksNetScreen() {
               <View className="flex-row items-center justify-between mb-1">
                 <Text className="text-xs text-blue-600 font-medium">Ham Puan</Text>
                 <Text className="text-base font-bold text-blue-700">
-                  {passesBaraj ? tytHamPuan.toFixed(1).replace('.', ',') : '—'}
+                  {passesBaraj ? tytHamPuan.toFixed(3).replace('.', ',') : '—'}
                 </Text>
               </View>
               {diplomaNotu > 0 && (
                 <View className="flex-row items-center justify-between pt-1 border-t border-blue-200">
                   <Text className="text-xs text-blue-600 font-medium">Yerleştirme Puanı</Text>
                   <Text className="text-base font-bold text-blue-700">
-                    {tytYerlesme.toFixed(1).replace('.', ',')}
+                    {tytYerlesme.toFixed(3).replace('.', ',')}
                   </Text>
                 </View>
               )}
@@ -750,7 +821,7 @@ export default function YksNetScreen() {
                 <Text className="text-xs text-emerald-600 font-medium">Ham Puan</Text>
                 <Text className="text-base font-bold text-emerald-700">
                   {passesBaraj && (aytMatNet > 0 || aytFizikNet > 0 || aytKimyaNet > 0 || aytBiyolojiNet > 0) 
-                    ? sayHamPuan.toFixed(1).replace('.', ',') 
+                    ? sayHamPuan.toFixed(3).replace('.', ',') 
                     : '—'}
                 </Text>
               </View>
@@ -758,7 +829,30 @@ export default function YksNetScreen() {
                 <View className="flex-row items-center justify-between pt-1 border-t border-emerald-200">
                   <Text className="text-xs text-emerald-600 font-medium">Yerleştirme Puanı</Text>
                   <Text className="text-base font-bold text-emerald-700">
-                    {sayYerlesme.toFixed(1).replace('.', ',')}
+                    {sayYerlesme.toFixed(3).replace('.', ',')}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* SÖZ Results */}
+          <View className="mb-4">
+            <Text className="text-sm font-bold text-slate-800 mb-2">SÖZ (Sözel) Puanı</Text>
+            <View className="bg-orange-50 px-3 py-2 rounded-xl border border-orange-200">
+              <View className="flex-row items-center justify-between mb-1">
+                <Text className="text-xs text-orange-600 font-medium">Ham Puan</Text>
+                <Text className="text-base font-bold text-orange-700">
+                  {passesBaraj && (aytEdebiyatNet > 0 || aytTarih1Net > 0 || aytCografya1Net > 0)
+                    ? sozHamPuan.toFixed(3).replace('.', ',')
+                    : '—'}
+                </Text>
+              </View>
+              {diplomaNotu > 0 && (
+                <View className="flex-row items-center justify-between pt-1 border-t border-orange-200">
+                  <Text className="text-xs text-orange-600 font-medium">Yerleştirme Puanı</Text>
+                  <Text className="text-base font-bold text-orange-700">
+                    {sozYerlesme.toFixed(3).replace('.', ',')}
                   </Text>
                 </View>
               )}
@@ -773,7 +867,7 @@ export default function YksNetScreen() {
                 <Text className="text-xs text-purple-600 font-medium">Ham Puan</Text>
                 <Text className="text-base font-bold text-purple-700">
                   {passesBaraj && (aytMatNet > 0 || aytEdebiyatNet > 0 || aytTarih1Net > 0 || aytCografya1Net > 0)
-                    ? eaHamPuan.toFixed(1).replace('.', ',')
+                    ? eaHamPuan.toFixed(3).replace('.', ',')
                     : '—'}
                 </Text>
               </View>
@@ -781,30 +875,30 @@ export default function YksNetScreen() {
                 <View className="flex-row items-center justify-between pt-1 border-t border-purple-200">
                   <Text className="text-xs text-purple-600 font-medium">Yerleştirme Puanı</Text>
                   <Text className="text-base font-bold text-purple-700">
-                    {eaYerlesme.toFixed(1).replace('.', ',')}
+                    {eaYerlesme.toFixed(3).replace('.', ',')}
                   </Text>
                 </View>
               )}
             </View>
           </View>
 
-          {/* SÖZ Results */}
+          {/* DİL Results */}
           <View className="mb-2">
-            <Text className="text-sm font-bold text-slate-800 mb-2">SÖZ (Sözel) Puanı</Text>
-            <View className="bg-orange-50 px-3 py-2 rounded-xl border border-orange-200">
+            <Text className="text-sm font-bold text-slate-800 mb-2">DİL (Yabancı Dil) Puanı</Text>
+            <View className="bg-rose-50 px-3 py-2 rounded-xl border border-rose-200">
               <View className="flex-row items-center justify-between mb-1">
-                <Text className="text-xs text-orange-600 font-medium">Ham Puan</Text>
-                <Text className="text-base font-bold text-orange-700">
-                  {passesBaraj && (aytEdebiyatNet > 0 || aytTarih1Net > 0 || aytCografya1Net > 0)
-                    ? sozHamPuan.toFixed(1).replace('.', ',')
+                <Text className="text-xs text-rose-600 font-medium">Ham Puan</Text>
+                <Text className="text-base font-bold text-rose-700">
+                  {passesBaraj && aytYdtNet > 0
+                    ? dilHamPuan.toFixed(3).replace('.', ',')
                     : '—'}
                 </Text>
               </View>
               {diplomaNotu > 0 && (
-                <View className="flex-row items-center justify-between pt-1 border-t border-orange-200">
-                  <Text className="text-xs text-orange-600 font-medium">Yerleştirme Puanı</Text>
-                  <Text className="text-base font-bold text-orange-700">
-                    {sozYerlesme.toFixed(1).replace('.', ',')}
+                <View className="flex-row items-center justify-between pt-1 border-t border-rose-200">
+                  <Text className="text-xs text-rose-600 font-medium">Yerleştirme Puanı</Text>
+                  <Text className="text-base font-bold text-rose-700">
+                    {dilYerlesme.toFixed(3).replace('.', ',')}
                   </Text>
                 </View>
               )}

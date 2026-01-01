@@ -52,4 +52,5 @@ export interface FilterState {
     maxRank: number | null;
     sortBy: 'score' | 'rank' | 'quota' | 'year' | null;
     sortOrder: 'asc' | 'desc';
+    selectedYksCalculationId: string | null;
 }

@@ -80,18 +80,18 @@ export default function RankingDetailScreen() {
                     </TouchableOpacity>
                 </View>
                 <Text className="text-white text-3xl font-bold leading-tight tracking-tight mb-2">{data.universityName}</Text>
-                <Text className="text-blue-100 text-lg font-medium">{formatDepartmentName()}</Text>
-                <View className="flex-row items-center mt-3">
+                <Text className="text-blue-100 text-lg font-medium" style={{ flexShrink: 1 }}>{formatDepartmentName()}</Text>
+                <View className="flex-row items-center mt-3 flex-wrap">
                     <View className="bg-blue-600 px-3 py-1.5 rounded-lg mr-2 shadow-sm">
                         <Text className="text-white text-xs font-bold uppercase tracking-wider">{data.scoreType}</Text>
                     </View>
-                    <Text className="text-slate-300 text-sm font-medium">{data.faculty}</Text>
+                    <Text className="text-slate-300 text-sm font-medium" style={{ flexShrink: 1, flex: 1 }}>{data.faculty}</Text>
                 </View>
             </View>
 
             <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Info Cards */}
-                <View className="flex-row flex-wrap p-4 gap-3 -mt-4">
+                <View className="flex-row flex-wrap p-4 gap-3 pt-6">
                     <View className="w-[48%] bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
                         <Text className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-2">Sıralama</Text>
                         <Text className="text-2xl font-bold text-slate-800">
@@ -100,7 +100,9 @@ export default function RankingDetailScreen() {
                     </View>
                     <View className="w-[48%] bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
                         <Text className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-2">Puan</Text>
-                        <Text className="text-2xl font-bold text-slate-800">{data.score.toFixed(2)}</Text>
+                        <Text className="text-2xl font-bold text-slate-800">
+                            {data.score != null ? data.score.toFixed(2) : 'N/A'}
+                        </Text>
                     </View>
                     <View className="w-[48%] bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
                         <Text className="text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-2">Kontenjan</Text>
@@ -135,7 +137,9 @@ export default function RankingDetailScreen() {
                         {data.history.map((h, i) => (
                             <View key={h.year} className={`flex-row p-3.5 ${i !== data.history.length - 1 ? 'border-b border-slate-50' : ''}`}>
                                 <Text className="flex-1 text-slate-700 text-sm font-medium text-left">{h.year}</Text>
-                                <Text className="flex-1 text-slate-700 text-sm font-medium text-center">{h.score.toFixed(2)}</Text>
+                                <Text className="flex-1 text-slate-700 text-sm font-medium text-center">
+                                    {h.score != null ? h.score.toFixed(2) : 'N/A'}
+                                </Text>
                                 <Text className="flex-1 text-slate-700 text-sm font-medium text-center">
                                     {h.rank !== null ? `${h.rank.toLocaleString('tr-TR')}` : 'N/A'}
                                 </Text>

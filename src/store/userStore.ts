@@ -22,10 +22,12 @@ export interface YKSCalculation {
     sayHamPuan: number;
     eaHamPuan: number;
     sozHamPuan: number;
+    dilHamPuan?: number;
     tytYerlesme: number;
     sayYerlesme: number;
     eaYerlesme: number;
     sozYerlesme: number;
+    dilYerlesme?: number;
     createdAt: number;
 }
 

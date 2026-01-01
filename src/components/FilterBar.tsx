@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 import { ScrollView, Text, TextInput, TouchableOpacity, View, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics'; // Optional: Add for better UX
 import { useFilterStore } from '../store/filterStore';
+import { useUserStore } from '../store/userStore';
 import { FilterModal } from './FilterModal';
 
-const CATEGORIES = ['SAY', 'SÖZ', 'EA', 'DİL', 'TYT'];
+const CATEGORIES = ['SAY', 'EA', 'SÖZ', 'DİL', 'TYT'];
 
 const SUB_CATEGORIES: Record<string, string[]> = {
     'SAY': ['Mühendislik', 'Tıp', 'Mimarlık', 'Diş Hekimliği', 'Matematik'],
@@ -16,8 +17,13 @@ const SUB_CATEGORIES: Record<string, string[]> = {
 };
 
 export const FilterBar = () => {
-    const { searchQuery, setSearchQuery, year, scoreType, city, department, setFilter } = useFilterStore();
+    const { searchQuery, setSearchQuery, year, scoreType, city, department, selectedYksCalculationId, setFilter } = useFilterStore();
+    const { yksCalculations } = useUserStore();
     const [isFilterModalVisible, setFilterModalVisible] = useState(false);
+    
+    const selectedYksCalculation = selectedYksCalculationId 
+        ? yksCalculations.find(c => c.id === selectedYksCalculationId)
+        : null;
 
     const handleCategoryPress = (category: string) => {
         // Haptic feedback for native feel
@@ -157,14 +163,35 @@ export const FilterBar = () => {
                 </View>
             )}
 
-            {/* Active Chips (Year/City) */}
-            {(year || city) && (
+            {/* Active Chips (Year/City/YKS Calculation) */}
+            {(year || city || selectedYksCalculation) && (
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
                     className="mt-4"
                 >
+                    {selectedYksCalculation && (
+                        <TouchableOpacity
+                            className="bg-blue-100 px-5 py-3 rounded-full border-2 border-blue-200 flex-row items-center"
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                setFilter('selectedYksCalculationId', null);
+                            }}
+                            style={{
+                                shadowColor: '#3b82f6',
+                                shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 2,
+                                elevation: 2,
+                            }}
+                        >
+                            <Text className="text-xs font-semibold text-blue-700 mr-2">
+                                {selectedYksCalculation.name}
+                            </Text>
+                            <X size={14} color="#1e40af" strokeWidth={2.5} />
+                        </TouchableOpacity>
+                    )}
                     {year && (
                         <TouchableOpacity
                             className="bg-indigo-100 px-5 py-3 rounded-full border-2 border-indigo-200 flex-row items-center"
