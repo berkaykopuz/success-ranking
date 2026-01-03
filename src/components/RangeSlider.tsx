@@ -1,493 +1,385 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View, Text, TextInput, PanResponder, Animated, TouchableWithoutFeedback, LayoutChangeEvent } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, TextInput, StyleSheet, LayoutChangeEvent } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  runOnJS,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
 
 interface RangeSliderProps {
-    min: number;
-    max: number;
-    minValue: number;
-    maxValue: number;
-    onValueChange: (min: number, max: number) => void;
-    step?: number;
-    label?: string;
-    formatValue?: (value: number) => string;
+  min: number;
+  max: number;
+  minValue: number;
+  maxValue: number;
+  onValueChange: (min: number, max: number) => void;
+  step?: number;
+  label?: string;
+  formatValue?: (value: number) => string;
+  onDragStateChange?: (isDragging: boolean) => void;
 }
 
+const THUMB_SIZE = 24;
+
 export const RangeSlider: React.FC<RangeSliderProps> = ({
-    min,
-    max,
-    minValue,
-    maxValue,
-    onValueChange,
-    step = 1,
-    label,
-    formatValue = (val) => Math.round(val).toString(),
+  min,
+  max,
+  minValue,
+  maxValue,
+  onValueChange,
+  step = 1,
+  label,
+  formatValue = (val) => Math.round(val).toString(),
+  onDragStateChange,
 }) => {
-    const thumbSize = 24;
-    const [sliderWidth, setSliderWidth] = useState(280);
-    const [trackLayout, setTrackLayout] = useState({ x: 0, width: 280 });
+  const [width, setWidth] = useState(0);
+  const [minInputText, setMinInputText] = useState<string | null>(null);
+  const [maxInputText, setMaxInputText] = useState<string | null>(null);
+  
+  // Preview values for smooth visual updates
+  const [previewMinValue, setPreviewMinValue] = useState(minValue);
+  const [previewMaxValue, setPreviewMaxValue] = useState(maxValue);
+  
+  const positionMin = useSharedValue(0);
+  const positionMax = useSharedValue(0);
+  const isDragging = useSharedValue(false);
 
-    const minPosition = useMemo(() => {
-        return ((minValue - min) / (max - min)) * sliderWidth;
-    }, [minValue, min, max, sliderWidth]);
+  const contextMin = useSharedValue(0);
+  const contextMax = useSharedValue(0);
 
-    const maxPosition = useMemo(() => {
-        return ((maxValue - min) / (max - min)) * sliderWidth;
-    }, [maxValue, min, max, sliderWidth]);
+  // Pressed state and scale for visual feedback
+  const minPressed = useSharedValue(false);
+  const maxPressed = useSharedValue(false);
+  const minScale = useSharedValue(1);
+  const maxScale = useSharedValue(1);
 
-    const [minAnim] = React.useState(() => new Animated.Value(minPosition));
-    const [maxAnim] = React.useState(() => new Animated.Value(maxPosition));
-    const [activeThumb, setActiveThumb] = React.useState<'min' | 'max' | null>(null);
-    const isDragging = useRef(false);
-    const lastMinPosition = useRef(minPosition);
-    const lastMaxPosition = useRef(maxPosition);
-    const rafId = useRef<number | null>(null);
-    const pendingValueChange = useRef<{ min: number; max: number } | null>(null);
-    const startPosition = useRef<{ min: number; max: number }>({ min: 0, max: 0 });
-    
-    // State for editable inputs
-    const [minInputValue, setMinInputValue] = useState(formatValue(minValue));
-    const [maxInputValue, setMaxInputValue] = useState(formatValue(maxValue));
-    const [isMinFocused, setIsMinFocused] = useState(false);
-    const [isMaxFocused, setIsMaxFocused] = useState(false);
+  useEffect(() => {
+    if (!isDragging.value) {
+      setPreviewMinValue(minValue);
+      setPreviewMaxValue(maxValue);
+    }
+  }, [minValue, maxValue, isDragging.value]);
 
-    React.useEffect(() => {
-        // Only update if not dragging and position actually changed
-        if (!isDragging.current && minPosition !== lastMinPosition.current) {
-            minAnim.setValue(minPosition);
-            lastMinPosition.current = minPosition;
-        }
-    }, [minPosition, minAnim]);
+  useEffect(() => {
+    if (width > 0 && !isDragging.value) {
+      positionMin.value = ((minValue - min) / (max - min)) * width;
+      positionMax.value = ((maxValue - min) / (max - min)) * width;
+    }
+  }, [width, min, max, minValue, maxValue]);
 
-    React.useEffect(() => {
-        // Only update if not dragging and position actually changed
-        if (!isDragging.current && maxPosition !== lastMaxPosition.current) {
-            maxAnim.setValue(maxPosition);
-            lastMaxPosition.current = maxPosition;
-        }
-    }, [maxPosition, maxAnim]);
+  const updatePreviewValues = (newMinPos: number, newMaxPos: number) => {
+    'worklet';
+    const rawMin = min + (newMinPos / width) * (max - min);
+    const rawMax = min + (newMaxPos / width) * (max - min);
+    runOnJS(setPreviewMinValue)(rawMin);
+    runOnJS(setPreviewMaxValue)(rawMax);
+  };
 
-    // Update input values when props change (but not when focused)
-    React.useEffect(() => {
-        if (!isMinFocused) {
-            setMinInputValue(formatValue(minValue));
-        }
-    }, [minValue, formatValue, isMinFocused]);
+  const commitValues = (newMinPos: number, newMaxPos: number, isMinThumb: boolean) => {
+    'worklet';
+    const rawMin = min + (newMinPos / width) * (max - min);
+    const rawMax = min + (newMaxPos / width) * (max - min);
+    const steppedMin = Math.round(rawMin / step) * step;
+    const steppedMax = Math.round(rawMax / step) * step;
 
-    React.useEffect(() => {
-        if (!isMaxFocused) {
-            setMaxInputValue(formatValue(maxValue));
-        }
-    }, [maxValue, formatValue, isMaxFocused]);
+    positionMin.value = ((steppedMin - min) / (max - min)) * width;
+    positionMax.value = ((steppedMax - min) / (max - min)) * width;
 
-    // Cleanup on unmount
-    React.useEffect(() => {
-        return () => {
-            if (rafId.current !== null) {
-                cancelAnimationFrame(rafId.current);
-            }
-        };
-    }, []);
+    runOnJS(setPreviewMinValue)(steppedMin);
+    runOnJS(setPreviewMaxValue)(steppedMax);
+    runOnJS(onValueChange)(steppedMin, steppedMax);
+  };
 
-    const getValueFromPosition = useCallback((x: number, width?: number): number => {
-        const currentWidth = width ?? sliderWidth;
-        const clampedX = Math.max(0, Math.min(currentWidth, x));
-        const ratio = clampedX / currentWidth;
-        const value = min + ratio * (max - min);
-        return Math.round(value / step) * step;
-    }, [min, max, step, sliderWidth]);
+  const minGesture = Gesture.Pan()
+    .onBegin(() => {
+      // Visual feedback when interaction starts
+      minPressed.value = true;
+      minScale.value = withSpring(1.2, { damping: 15, stiffness: 300 });
+    })
+    .onStart(() => {
+      contextMin.value = positionMin.value;
+      isDragging.value = true;
+      if (onDragStateChange) runOnJS(onDragStateChange)(true);
+    })
+    .onUpdate((e) => {
+      const newPos = contextMin.value + e.translationX;
+      positionMin.value = Math.min(Math.max(0, newPos), positionMax.value);
+      updatePreviewValues(positionMin.value, positionMax.value);
+    })
+    .onEnd(() => {
+      commitValues(positionMin.value, positionMax.value, true);
+      isDragging.value = false;
+      minPressed.value = false;
+      minScale.value = withSpring(1, { damping: 15, stiffness: 300 });
+      if (onDragStateChange) runOnJS(onDragStateChange)(false);
+    })
+    .onFinalize(() => {
+      isDragging.value = false;
+      minPressed.value = false;
+      minScale.value = withSpring(1, { damping: 15, stiffness: 300 });
+      if (onDragStateChange) runOnJS(onDragStateChange)(false);
+    });
 
-    // Store current values in refs so PanResponder can access latest values
-    const currentValuesRef = useRef({ minValue, maxValue, sliderWidth, min, max, step, onValueChange });
-    
-    React.useEffect(() => {
-        currentValuesRef.current = { minValue, maxValue, sliderWidth, min, max, step, onValueChange };
-    }, [minValue, maxValue, sliderWidth, min, max, step, onValueChange]);
+  const maxGesture = Gesture.Pan()
+    .onBegin(() => {
+      // Visual feedback when interaction starts
+      maxPressed.value = true;
+      maxScale.value = withSpring(1.2, { damping: 15, stiffness: 300 });
+    })
+    .onStart(() => {
+      contextMax.value = positionMax.value;
+      isDragging.value = true;
+      if (onDragStateChange) runOnJS(onDragStateChange)(true);
+    })
+    .onUpdate((e) => {
+      const newPos = contextMax.value + e.translationX;
+      positionMax.value = Math.max(Math.min(width, newPos), positionMin.value);
+      updatePreviewValues(positionMin.value, positionMax.value);
+    })
+    .onEnd(() => {
+      commitValues(positionMin.value, positionMax.value, false);
+      isDragging.value = false;
+      maxPressed.value = false;
+      maxScale.value = withSpring(1, { damping: 15, stiffness: 300 });
+      if (onDragStateChange) runOnJS(onDragStateChange)(false);
+    })
+    .onFinalize(() => {
+      isDragging.value = false;
+      maxPressed.value = false;
+      maxScale.value = withSpring(1, { damping: 15, stiffness: 300 });
+      if (onDragStateChange) runOnJS(onDragStateChange)(false);
+    });
 
-    // Throttled value change using requestAnimationFrame
-    const scheduleValueChange = useCallback((newMin: number, newMax: number) => {
-        pendingValueChange.current = { min: newMin, max: newMax };
-        
-        if (rafId.current === null) {
-            rafId.current = requestAnimationFrame(() => {
-                if (pendingValueChange.current) {
-                    currentValuesRef.current.onValueChange(
-                        pendingValueChange.current.min,
-                        pendingValueChange.current.max
-                    );
-                    pendingValueChange.current = null;
-                }
-                rafId.current = null;
-            });
-        }
-    }, []);
+  const minThumbStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: positionMin.value - THUMB_SIZE / 2 },
+      { scale: minScale.value },
+    ],
+    zIndex: positionMin.value > width / 2 ? 10 : 1,
+  }));
 
-    const panResponderMin = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: () => true,
-            onPanResponderGrant: (evt) => {
-                isDragging.current = true;
-                setActiveThumb('min');
-                const { minValue: currMin, maxValue: currMax, sliderWidth: width, min: currMinBound, max: currMaxBound } = currentValuesRef.current;
-                const currentMinPosition = ((currMin - currMinBound) / (currMaxBound - currMinBound)) * width;
-                startPosition.current.min = currentMinPosition;
-            },
-            onPanResponderMove: (evt, gestureState) => {
-                const { maxValue: currMax, sliderWidth: width, min: currMinBound, max: currMaxBound, step: currStep } = currentValuesRef.current;
-                // Calculate new position from start position + gesture delta for smooth tracking
-                const newPosition = Math.max(0, Math.min(width, startPosition.current.min + gestureState.dx));
-                
-                // Update animation immediately - this is the key for smooth following
-                minAnim.setValue(newPosition);
-                lastMinPosition.current = newPosition;
-                
-                // Calculate value and schedule update (throttled via RAF)
-                const newValue = getValueFromPosition(newPosition, width);
-                const clampedValue = Math.max(currMinBound, Math.min(newValue, currMax - currStep));
-                scheduleValueChange(clampedValue, currMax);
-            },
-            onPanResponderRelease: () => {
-                isDragging.current = false;
-                setActiveThumb(null);
-                // Flush any pending value change
-                if (rafId.current !== null) {
-                    cancelAnimationFrame(rafId.current);
-                    rafId.current = null;
-                }
-                if (pendingValueChange.current) {
-                    currentValuesRef.current.onValueChange(
-                        pendingValueChange.current.min,
-                        pendingValueChange.current.max
-                    );
-                    pendingValueChange.current = null;
-                }
-            },
-        })
-    ).current;
+  const maxThumbStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: positionMax.value - THUMB_SIZE / 2 },
+      { scale: maxScale.value },
+    ],
+    zIndex: positionMax.value < width / 2 ? 10 : 1,
+  }));
 
-    const panResponderMax = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
-            onMoveShouldSetPanResponder: () => true,
-            onPanResponderGrant: (evt) => {
-                isDragging.current = true;
-                setActiveThumb('max');
-                const { minValue: currMin, maxValue: currMax, sliderWidth: width, min: currMinBound, max: currMaxBound } = currentValuesRef.current;
-                const currentMaxPosition = ((currMax - currMinBound) / (currMaxBound - currMinBound)) * width;
-                startPosition.current.max = currentMaxPosition;
-            },
-            onPanResponderMove: (evt, gestureState) => {
-                const { minValue: currMin, sliderWidth: width, min: currMinBound, max: currMaxBound, step: currStep } = currentValuesRef.current;
-                // Calculate new position from start position + gesture delta for smooth tracking
-                const newPosition = Math.max(0, Math.min(width, startPosition.current.max + gestureState.dx));
-                
-                // Update animation immediately - this is the key for smooth following
-                maxAnim.setValue(newPosition);
-                lastMaxPosition.current = newPosition;
-                
-                // Calculate value and schedule update (throttled via RAF)
-                const newValue = getValueFromPosition(newPosition, width);
-                const clampedValue = Math.max(currMin + currStep, Math.min(newValue, currMaxBound));
-                scheduleValueChange(currMin, clampedValue);
-            },
-            onPanResponderRelease: () => {
-                isDragging.current = false;
-                setActiveThumb(null);
-                // Flush any pending value change
-                if (rafId.current !== null) {
-                    cancelAnimationFrame(rafId.current);
-                    rafId.current = null;
-                }
-                if (pendingValueChange.current) {
-                    currentValuesRef.current.onValueChange(
-                        pendingValueChange.current.min,
-                        pendingValueChange.current.max
-                    );
-                    pendingValueChange.current = null;
-                }
-            },
-        })
-    ).current;
+  const minThumbInnerStyle = useAnimatedStyle(() => ({
+    backgroundColor: minPressed.value ? '#1e40af' : '#2563eb',
+  }));
 
-    const handleTrackLayout = useCallback((event: LayoutChangeEvent) => {
-        const { x, width } = event.nativeEvent.layout;
-        setTrackLayout({ x, width });
-        if (width > 0) {
-            setSliderWidth(width);
-        }
-    }, []);
+  const maxThumbInnerStyle = useAnimatedStyle(() => ({
+    backgroundColor: maxPressed.value ? '#1e40af' : '#2563eb',
+  }));
 
-    const handleTrackPress = useCallback((evt: any) => {
-        const touchX = evt.nativeEvent.locationX;
-        const newValue = getValueFromPosition(touchX);
-        
-        // Determine which thumb is closer
-        const distanceToMin = Math.abs(newValue - minValue);
-        const distanceToMax = Math.abs(newValue - maxValue);
-        
-        if (distanceToMin < distanceToMax) {
-            const clampedValue = Math.max(min, Math.min(newValue, maxValue - step));
-            onValueChange(clampedValue, maxValue);
-        } else {
-            const clampedValue = Math.max(minValue + step, Math.min(newValue, max));
-            onValueChange(minValue, clampedValue);
-        }
-    }, [minValue, maxValue, min, max, step, getValueFromPosition, onValueChange]);
+  const trackStyle = useAnimatedStyle(() => ({
+    left: positionMin.value,
+    width: positionMax.value - positionMin.value,
+  }));
 
-    // Parse formatted value back to number (remove commas, etc.)
-    const parseValue = useCallback((text: string): number | null => {
-        // Remove all non-numeric characters except decimal point and minus sign
-        const cleaned = text.replace(/[^\d.-]/g, '');
-        const parsed = parseFloat(cleaned);
-        return isNaN(parsed) ? null : parsed;
-    }, []);
+  const handleMinInputChange = (text: string) => {
+    const cleanedText = text.replace(/[^0-9.]/g, '');
+    setMinInputText(cleanedText);
+    const val = parseFloat(cleanedText);
+    if (!isNaN(val) && cleanedText !== '' && val >= min && val <= max) {
+      if (val <= maxValue - step) {
+        onValueChange(val, maxValue);
+      }
+    }
+  };
 
-    // Handle min value input focus - show raw number
-    const handleMinInputFocus = useCallback(() => {
-        setIsMinFocused(true);
-        // Show raw numeric value when focusing
-        setMinInputValue(Math.round(minValue).toString());
-    }, [minValue]);
+  const handleMaxInputChange = (text: string) => {
+    const cleanedText = text.replace(/[^0-9.]/g, '');
+    setMaxInputText(cleanedText);
+    const val = parseFloat(cleanedText);
+    if (!isNaN(val) && cleanedText !== '' && val >= min && val <= max) {
+      if (val >= minValue + step) {
+        onValueChange(minValue, val);
+      }
+    }
+  };
 
-    // Handle min value input change - allow free typing, only update slider for valid values
-    const handleMinInputChange = useCallback((text: string) => {
-        setMinInputValue(text);
-        const parsed = parseValue(text);
-        if (parsed !== null) {
-            // Strict limit: min cannot exceed maxValue - step
-            const maxAllowed = maxValue - step;
-            const minAllowed = min;
-            
-            // Only update slider if value is within valid range
-            // Don't auto-adjust the input field while typing - let user finish typing
-            if (parsed >= minAllowed && parsed <= maxAllowed) {
-                // Value is within valid range, update slider immediately
-                onValueChange(parsed, maxValue);
-            }
-            // If out of range, don't update slider - let user finish typing first
-        }
-    }, [maxValue, min, step, onValueChange, parseValue]);
+  const handleMinInputBlur = () => {
+    if (minInputText !== null) {
+      const val = parseFloat(minInputText);
+      if (isNaN(val) || val < min || val > max) {
+        setMinInputText(null);
+      } else {
+        const finalVal = Math.max(min, Math.min(val, maxValue - step));
+        onValueChange(finalVal, maxValue);
+        setMinInputText(null);
+      }
+    }
+  };
 
-    // Handle min value input blur/end editing - auto-adjust if exceeds limits
-    const handleMinInputEnd = useCallback(() => {
-        setIsMinFocused(false);
-        const parsed = parseValue(minInputValue);
-        if (parsed !== null) {
-            // Final validation and clamping - auto-adjust if exceeds limits
-            const maxAllowed = maxValue - step;
-            const minAllowed = min;
-            let clampedValue = parsed;
-            
-            // Auto-adjust if exceeds limits
-            if (parsed > maxAllowed) {
-                clampedValue = maxAllowed;
-            } else if (parsed < minAllowed) {
-                clampedValue = minAllowed;
-            }
-            
-            onValueChange(clampedValue, maxValue);
-            setMinInputValue(formatValue(clampedValue));
-        } else {
-            // Reset to current value if invalid
-            setMinInputValue(formatValue(minValue));
-        }
-    }, [minInputValue, min, maxValue, step, onValueChange, parseValue, formatValue, minValue]);
+  const handleMaxInputBlur = () => {
+    if (maxInputText !== null) {
+      const val = parseFloat(maxInputText);
+      if (isNaN(val) || val < min || val > max) {
+        setMaxInputText(null);
+      } else {
+        const finalVal = Math.min(max, Math.max(val, minValue + step));
+        onValueChange(minValue, finalVal);
+        setMaxInputText(null);
+      }
+    }
+  };
 
-    // Handle max value input focus - show raw number
-    const handleMaxInputFocus = useCallback(() => {
-        setIsMaxFocused(true);
-        // Show raw numeric value when focusing
-        setMaxInputValue(Math.round(maxValue).toString());
-    }, [maxValue]);
+  const onLayout = (e: LayoutChangeEvent) => {
+    setWidth(e.nativeEvent.layout.width);
+  };
 
-    // Handle max value input change - allow free typing, only update slider for valid values
-    const handleMaxInputChange = useCallback((text: string) => {
-        setMaxInputValue(text);
-        const parsed = parseValue(text);
-        if (parsed !== null) {
-            // Strict limit: max cannot go below minValue + step
-            const minAllowed = minValue + step;
-            const maxAllowed = max;
-            
-            // Only update slider if value is within valid range
-            // Don't auto-adjust the input field while typing - let user finish typing
-            if (parsed >= minAllowed && parsed <= maxAllowed) {
-                // Value is within valid range, update slider immediately
-                onValueChange(minValue, parsed);
-            }
-            // If out of range, don't update slider - let user finish typing first
-        }
-    }, [minValue, max, step, onValueChange, parseValue]);
+  return (
+    <GestureHandlerRootView style={styles.container}>
+      {label && <Text style={styles.label}>{label}</Text>}
 
-    // Handle max value input blur/end editing - auto-adjust if exceeds limits
-    const handleMaxInputEnd = useCallback(() => {
-        setIsMaxFocused(false);
-        const parsed = parseValue(maxInputValue);
-        if (parsed !== null) {
-            // Final validation and clamping - auto-adjust if exceeds limits
-            const minAllowed = minValue + step;
-            const maxAllowed = max;
-            let clampedValue = parsed;
-            
-            // Auto-adjust if exceeds limits
-            if (parsed < minAllowed) {
-                clampedValue = minAllowed;
-            } else if (parsed > maxAllowed) {
-                clampedValue = maxAllowed;
-            }
-            
-            onValueChange(minValue, clampedValue);
-            setMaxInputValue(formatValue(clampedValue));
-        } else {
-            // Reset to current value if invalid
-            setMaxInputValue(formatValue(maxValue));
-        }
-    }, [maxInputValue, max, minValue, step, onValueChange, parseValue, formatValue, maxValue]);
+      <View style={styles.header}>
+        <InputBox 
+          label="MINIMUM" 
+          value={minInputText !== null ? minInputText : formatValue(previewMinValue)} 
+          onChange={handleMinInputChange}
+          onBlur={handleMinInputBlur}
+        />
+        <Text style={styles.separator}>-</Text>
+        <InputBox 
+          label="MAXIMUM" 
+          value={maxInputText !== null ? maxInputText : formatValue(previewMaxValue)} 
+          onChange={handleMaxInputChange}
+          onBlur={handleMaxInputBlur}
+        />
+      </View>
 
-    return (
-        <View className="w-full">
-            {label && (
-                <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">
-                    {label}
-                </Text>
-            )}
-            
-            {/* Value Display */}
-            <View className="flex-row justify-between items-center mb-4 gap-3">
-                <View 
-                    className="flex-1 border border-blue-200 rounded-xl px-4 py-3 items-center"
-                    style={{
-                        backgroundColor: '#eff6ff',
-                        shadowColor: '#3b82f6',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 3,
-                        elevation: 2,
-                    }}
-                >
-                    <Text className="text-xs font-semibold text-blue-500 mb-1 uppercase tracking-wide">MİNİMUM</Text>
-                    <TextInput
-                        value={minInputValue}
-                        onChangeText={handleMinInputChange}
-                        onFocus={handleMinInputFocus}
-                        onBlur={handleMinInputEnd}
-                        onEndEditing={handleMinInputEnd}
-                        keyboardType="numeric"
-                        selectTextOnFocus
-                        className="text-base font-bold text-blue-700 text-center"
-                        style={{ color: '#1e3a8a', padding: 0, minWidth: 60 }}
-                    />
-                </View>
-                <View className="justify-center px-2">
-                    <Text className="text-xl font-bold text-slate-400">-</Text>
-                </View>
-                <View 
-                    className="flex-1 border border-blue-200 rounded-xl px-4 py-3 items-center"
-                    style={{
-                        backgroundColor: '#eff6ff',
-                        shadowColor: '#3b82f6',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 3,
-                        elevation: 2,
-                    }}
-                >
-                    <Text className="text-xs font-semibold text-blue-500 mb-1 uppercase tracking-wide">MAKSİMUM</Text>
-                    <TextInput
-                        value={maxInputValue}
-                        onChangeText={handleMaxInputChange}
-                        onFocus={handleMaxInputFocus}
-                        onBlur={handleMaxInputEnd}
-                        onEndEditing={handleMaxInputEnd}
-                        keyboardType="numeric"
-                        selectTextOnFocus
-                        className="text-base font-bold text-blue-700 text-center"
-                        style={{ color: '#1e3a8a', padding: 0, minWidth: 60 }}
-                    />
-                </View>
-            </View>
+      <View style={styles.trackContainer} onLayout={onLayout}>
+        <View style={styles.trackBackground} />
+        <Animated.View style={[styles.trackActive, trackStyle]} />
 
-            {/* Slider Track */}
-            <View className="relative w-full" style={{ height: 40, justifyContent: 'center' }}>
-                <TouchableWithoutFeedback onPress={handleTrackPress}>
-                    <View
-                        onLayout={handleTrackLayout}
-                        className="w-full"
-                        style={{
-                            height: 40,
-                            justifyContent: 'center',
-                            position: 'relative',
-                        }}
-                    >
-                        <View
-                            className="w-full"
-                            style={{
-                                height: 4,
-                                backgroundColor: '#e2e8f0',
-                                borderRadius: 2,
-                                position: 'relative',
-                            }}
-                        >
-                            {/* Active Range */}
-                            <Animated.View
-                                style={{
-                                    position: 'absolute',
-                                    left: minAnim,
-                                    width: Animated.subtract(maxAnim, minAnim),
-                                    height: 4,
-                                    backgroundColor: '#2563eb',
-                                    borderRadius: 2,
-                                }}
-                            />
-                        </View>
-                    </View>
-                </TouchableWithoutFeedback>
+        <GestureDetector gesture={minGesture}>
+          <Animated.View style={[styles.thumb, minThumbStyle]}>
+            <Animated.View style={[styles.thumbInner, minThumbInnerStyle]} />
+          </Animated.View>
+        </GestureDetector>
 
-                {/* Min Thumb */}
-                <Animated.View
-                    {...panResponderMin.panHandlers}
-                    style={{
-                        position: 'absolute',
-                        left: minAnim,
-                        marginLeft: -thumbSize / 2,
-                        width: thumbSize,
-                        height: thumbSize,
-                        borderRadius: thumbSize / 2,
-                        backgroundColor: activeThumb === 'min' ? '#1e40af' : '#2563eb',
-                        borderWidth: 3,
-                        borderColor: '#ffffff',
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.2,
-                        shadowRadius: 3,
-                        elevation: 5,
-                        zIndex: activeThumb === 'min' ? 10 : 5,
-                    }}
-                />
-
-                {/* Max Thumb */}
-                <Animated.View
-                    {...panResponderMax.panHandlers}
-                    style={{
-                        position: 'absolute',
-                        left: maxAnim,
-                        marginLeft: -thumbSize / 2,
-                        width: thumbSize,
-                        height: thumbSize,
-                        borderRadius: thumbSize / 2,
-                        backgroundColor: activeThumb === 'max' ? '#1e40af' : '#2563eb',
-                        borderWidth: 3,
-                        borderColor: '#ffffff',
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.2,
-                        shadowRadius: 3,
-                        elevation: 5,
-                        zIndex: activeThumb === 'max' ? 10 : 5,
-                    }}
-                />
-            </View>
-        </View>
-    );
+        <GestureDetector gesture={maxGesture}>
+          <Animated.View style={[styles.thumb, maxThumbStyle]}>
+            <Animated.View style={[styles.thumbInner, maxThumbInnerStyle]} />
+          </Animated.View>
+        </GestureDetector>
+      </View>
+    </GestureHandlerRootView>
+  );
 };
 
+const InputBox = ({ label, value, onChange, onBlur }: { label: string, value: string, onChange: (t: string) => void, onBlur?: () => void }) => (
+  <View style={styles.inputContainer}>
+    <Text style={styles.inputLabel}>{label}</Text>
+    <TextInput
+      style={styles.input}
+      value={value}
+      onChangeText={onChange}
+      onBlur={onBlur}
+      keyboardType="numeric"
+      selectTextOnFocus
+    />
+  </View>
+);
+
+const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#94a3b8', 
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 12,
+  },
+  separator: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#94a3b8',
+  },
+  inputContainer: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    backgroundColor: '#eff6ff',
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  inputLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#3b82f6',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  input: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1e3a8a',
+    padding: 0,
+    minWidth: 40,
+    textAlign: 'center',
+  },
+  trackContainer: {
+    height: 40,
+    justifyContent: 'center',
+    // Removed width: '100%' so margins can take effect properly
+    marginHorizontal: 10, // Adds spacing from the edges
+  },
+  trackBackground: {
+    height: 3, // Reduced from 4 for a sleeker look
+    backgroundColor: '#e2e8f0',
+    borderRadius: 2,
+    width: '100%',
+  },
+  trackActive: {
+    position: 'absolute',
+    height: 3, // Reduced from 4
+    backgroundColor: '#2563eb',
+    borderRadius: 2,
+  },
+  thumb: {
+    position: 'absolute',
+    width: THUMB_SIZE,
+    height: THUMB_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  thumbInner: {
+    width: THUMB_SIZE,
+    height: THUMB_SIZE,
+    borderRadius: THUMB_SIZE / 2,
+    borderWidth: 3,
+    borderColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+});

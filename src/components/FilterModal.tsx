@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, X, ChevronDown } from 'lucide-react-native';
 import React, { useEffect, useState, useRef } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useFilterStore } from '../store/filterStore';
 import { useUserStore } from '../store/userStore';
@@ -35,6 +35,8 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
     const { getYKSCalculations } = useUserStore();
     const yksCalculations = getYKSCalculations();
     const [isYksDropdownOpen, setIsYksDropdownOpen] = useState(false);
+    const [isSliderDragging, setIsSliderDragging] = useState(false);
+    const { width } = useWindowDimensions();
 
     // Default ranges for sliders
     const SCORE_MIN = 0;
@@ -195,6 +197,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                             showsVerticalScrollIndicator={false}
                             contentContainerStyle={{ paddingBottom: 10 }}
                             onScrollBeginDrag={() => setIsYksDropdownOpen(false)}
+                            scrollEnabled={!isSliderDragging}
                         >
                             {/* YKS Calculation Section */}
                             <View className="pt-6 pb-6 border-b border-slate-100">
@@ -425,9 +428,18 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                 </View>
                                 <View>
                                     <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">DİL</Text>
-                                    <View className="flex-row flex-wrap gap-2.5">
+                                    <View className="flex-row flex-wrap" style={{ gap: 8 }}>
                                         {LANGUAGES.map((lang) => {
                                             const isSelected = localFilters.language.includes(lang);
+                                            // Calculate button width: (container width - scroll padding - gaps) / columns
+                                            // Using 3 columns for consistent rows and better text display
+                                            // ScrollView has px-5 (20px each side = 40px total)
+                                            const scrollPadding = 40; // px-5 on ScrollView = 20*2
+                                            const gapSize = 8;
+                                            const columns = 3;
+                                            const availableWidth = width - scrollPadding;
+                                            const buttonWidth = (availableWidth - (gapSize * (columns - 1))) / columns;
+                                            
                                             return (
                                                 <TouchableOpacity
                                                     key={lang}
@@ -439,26 +451,31 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                                                 : [...prev.language, lang]
                                                         }));
                                                     }}
-                                                    className={`px-5 py-3 rounded-xl items-center justify-center ${
+                                                    className={`px-3 py-2.5 rounded-xl items-center justify-center ${
                                                         isSelected ? 'bg-blue-600' : 'bg-slate-50'
                                                     }`}
                                                     style={{
+                                                        width: buttonWidth,
+                                                        minHeight: 40,
                                                         shadowColor: isSelected ? '#3b82f6' : '#000',
                                                         shadowOffset: { width: 0, height: 2 },
                                                         shadowOpacity: isSelected ? 0.2 : 0.05,
                                                         shadowRadius: 4,
-                                                        elevation: isSelected ? 4 : 2,
+                                                        elevation: 2,
                                                     }}
                                                 >
                                                     <View className="flex-row items-center">
-                                                        {isSelected ? (
-                                                            <Text className="text-white text-base font-bold mr-2">✓</Text>
-                                                        ) : (
-                                                            <View
-                                                                className="w-4 h-4 rounded border-2 mr-2 items-center justify-center border-slate-300"
-                                                            />
-                                                        )}
-                                                        <Text className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`}>
+                                                        <View className="w-4 h-4 mr-2 items-center justify-center" style={{ minWidth: 16, minHeight: 16 }}>
+                                                            {isSelected ? (
+                                                                <Text className="text-white text-base font-bold" style={{ lineHeight: 16, fontSize: 16, width: 16, height: 16, textAlign: 'center' }}>✓</Text>
+                                                            ) : (
+                                                                <View
+                                                                    className="w-4 h-4 rounded border-2 items-center justify-center border-slate-300"
+                                                                    style={{ width: 16, height: 16 }}
+                                                                />
+                                                            )}
+                                                        </View>
+                                                        <Text className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`} numberOfLines={2} style={{ textAlign: 'center' }}>
                                                             {lang}
                                                         </Text>
                                                     </View>
@@ -476,7 +493,27 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                 {/* Range Type Selector */}
                                 <View className="flex-row w-full mb-5">
                                     <TouchableOpacity
-                                        onPress={() => setRangeType('puan')}
+                                        onPress={() => {
+                                            if (rangeType !== 'puan') {
+                                                // Reset both filters when switching
+                                                lastSliderPositions.current.minScore = SCORE_MIN;
+                                                lastSliderPositions.current.maxScore = SCORE_MAX;
+                                                lastSliderPositions.current.minRank = RANK_MIN;
+                                                lastSliderPositions.current.maxRank = RANK_MAX;
+                                                setLocalFilters(prev => ({
+                                                    ...prev,
+                                                    minScore: SCORE_MIN,
+                                                    maxScore: SCORE_MAX,
+                                                    minRank: RANK_MIN,
+                                                    maxRank: RANK_MAX,
+                                                }));
+                                                setFilter('minScore', null);
+                                                setFilter('maxScore', null);
+                                                setFilter('minRank', null);
+                                                setFilter('maxRank', null);
+                                            }
+                                            setRangeType('puan');
+                                        }}
                                         className={`flex-1 py-4 px-2 rounded-xl items-center justify-center ${rangeType === 'puan' ? 'bg-blue-600' : 'bg-slate-50'}`}
                                         style={{
                                             flex: 1,
@@ -492,7 +529,27 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                         </Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
-                                        onPress={() => setRangeType('siralama')}
+                                        onPress={() => {
+                                            if (rangeType !== 'siralama') {
+                                                // Reset both filters when switching
+                                                lastSliderPositions.current.minScore = SCORE_MIN;
+                                                lastSliderPositions.current.maxScore = SCORE_MAX;
+                                                lastSliderPositions.current.minRank = RANK_MIN;
+                                                lastSliderPositions.current.maxRank = RANK_MAX;
+                                                setLocalFilters(prev => ({
+                                                    ...prev,
+                                                    minScore: SCORE_MIN,
+                                                    maxScore: SCORE_MAX,
+                                                    minRank: RANK_MIN,
+                                                    maxRank: RANK_MAX,
+                                                }));
+                                                setFilter('minScore', null);
+                                                setFilter('maxScore', null);
+                                                setFilter('minRank', null);
+                                                setFilter('maxRank', null);
+                                            }
+                                            setRangeType('siralama');
+                                        }}
                                         className={`flex-1 py-4 px-2 rounded-xl items-center justify-center ml-1.5 ${rangeType === 'siralama' ? 'bg-blue-600' : 'bg-slate-50'}`}
                                         style={{
                                             flex: 1,
@@ -523,6 +580,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                             lastSliderPositions.current.maxScore = max;
                                             setLocalFilters(prev => ({ ...prev, minScore: min, maxScore: max }));
                                         }}
+                                        onDragStateChange={setIsSliderDragging}
                                         step={1}
                                         formatValue={(val) => Math.round(val).toString()}
                                     />
@@ -539,6 +597,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                             lastSliderPositions.current.maxRank = max;
                                             setLocalFilters(prev => ({ ...prev, minRank: min, maxRank: max }));
                                         }}
+                                        onDragStateChange={setIsSliderDragging}
                                         step={1}
                                         formatValue={(val) => Math.round(val).toLocaleString('tr-TR')}
                                     />

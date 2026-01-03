@@ -36,6 +36,26 @@ export const RankingCard = React.memo(({ item, router }: Props) => {
         return formatted;
     };
 
+    // Get colors based on scoreType (matching YKS net hesaplama screen)
+    const getScoreTypeColors = (scoreType: string) => {
+        switch (scoreType) {
+            case 'TYT':
+                return { bg: 'bg-blue-50', text: 'text-blue-700' };
+            case 'SAY':
+                return { bg: 'bg-emerald-50', text: 'text-emerald-700' };
+            case 'EA':
+                return { bg: 'bg-purple-50', text: 'text-purple-700' };
+            case 'SÖZ':
+                return { bg: 'bg-orange-50', text: 'text-orange-700' };
+            case 'DİL':
+                return { bg: 'bg-rose-50', text: 'text-rose-700' };
+            default:
+                return { bg: 'bg-blue-50', text: 'text-blue-700' };
+        }
+    };
+
+    const scoreTypeColors = getScoreTypeColors(item.scoreType);
+
     return (
         <>
             <TouchableOpacity
@@ -45,8 +65,8 @@ export const RankingCard = React.memo(({ item, router }: Props) => {
             <View className="flex-row justify-between items-start">
                 <View className="flex-1 pr-4">
                     <View className="flex-row items-center mb-1.5">
-                        <View className="bg-blue-50 px-2.5 py-1 rounded-md mr-2">
-                            <Text className="text-blue-700 font-bold text-[10px] tracking-wider uppercase">{item.scoreType}</Text>
+                        <View className={`${scoreTypeColors.bg} px-2.5 py-1 rounded-md mr-2`}>
+                            <Text className={`${scoreTypeColors.text} font-bold text-[10px] tracking-wider uppercase`}>{item.scoreType}</Text>
                         </View>
                         <Text className="text-slate-400 text-xs font-medium">{item.city}</Text>
                     </View>
