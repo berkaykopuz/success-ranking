@@ -426,68 +426,10 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                         })}
                                     </View>
                                 </View>
-                                <View>
-                                    <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">DİL</Text>
-                                    <View className="flex-row flex-wrap" style={{ gap: 8 }}>
-                                        {LANGUAGES.map((lang) => {
-                                            const isSelected = localFilters.language.includes(lang);
-                                            // Calculate button width: (container width - scroll padding - gaps) / columns
-                                            // Using 3 columns for consistent rows and better text display
-                                            // ScrollView has px-5 (20px each side = 40px total)
-                                            const scrollPadding = 40; // px-5 on ScrollView = 20*2
-                                            const gapSize = 8;
-                                            const columns = 3;
-                                            const availableWidth = width - scrollPadding;
-                                            const buttonWidth = (availableWidth - (gapSize * (columns - 1))) / columns;
-                                            
-                                            return (
-                                                <TouchableOpacity
-                                                    key={lang}
-                                                    onPress={() => {
-                                                        setLocalFilters(prev => ({
-                                                            ...prev,
-                                                            language: isSelected
-                                                                ? prev.language.filter(l => l !== lang)
-                                                                : [...prev.language, lang]
-                                                        }));
-                                                    }}
-                                                    className={`px-3 py-2.5 rounded-xl items-center justify-center ${
-                                                        isSelected ? 'bg-blue-600' : 'bg-slate-50'
-                                                    }`}
-                                                    style={{
-                                                        width: buttonWidth,
-                                                        minHeight: 40,
-                                                        shadowColor: isSelected ? '#3b82f6' : '#000',
-                                                        shadowOffset: { width: 0, height: 2 },
-                                                        shadowOpacity: isSelected ? 0.2 : 0.05,
-                                                        shadowRadius: 4,
-                                                        elevation: 2,
-                                                    }}
-                                                >
-                                                    <View className="flex-row items-center">
-                                                        <View className="w-4 h-4 mr-2 items-center justify-center" style={{ minWidth: 16, minHeight: 16 }}>
-                                                            {isSelected ? (
-                                                                <Text className="text-white text-base font-bold" style={{ lineHeight: 16, fontSize: 16, width: 16, height: 16, textAlign: 'center' }}>✓</Text>
-                                                            ) : (
-                                                                <View
-                                                                    className="w-4 h-4 rounded border-2 items-center justify-center border-slate-300"
-                                                                    style={{ width: 16, height: 16 }}
-                                                                />
-                                                            )}
-                                                        </View>
-                                                        <Text className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`} numberOfLines={2} style={{ textAlign: 'center' }}>
-                                                            {lang}
-                                                        </Text>
-                                                    </View>
-                                                </TouchableOpacity>
-                                            );
-                                        })}
-                                    </View>
-                                </View>
                             </View>
 
                             {/* Ranges Section */}
-                            <View className="pt-6 pb-5">
+                            <View className="pt-6 pb-5 border-b border-slate-100">
                                 <Text className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider">ARALIK FİLTRESİ</Text>
                                 
                                 {/* Range Type Selector */}
@@ -602,6 +544,63 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                         formatValue={(val) => Math.round(val).toLocaleString('tr-TR')}
                                     />
                                 )}
+                            </View>
+
+                            {/* Language Section */}
+                            <View className="pt-6 pb-6">
+                                <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">DİL</Text>
+                                <View className="flex-row flex-wrap" style={{ gap: 8 }}>
+                                    {LANGUAGES.map((lang) => {
+                                        const isSelected = localFilters.language.includes(lang);
+                                        const scrollPadding = 40;
+                                        const gapSize = 8;
+                                        const columns = 3;
+                                        const availableWidth = width - scrollPadding;
+                                        const buttonWidth = (availableWidth - (gapSize * (columns - 1))) / columns;
+                                        
+                                        return (
+                                            <TouchableOpacity
+                                                key={lang}
+                                                onPress={() => {
+                                                    setLocalFilters(prev => ({
+                                                        ...prev,
+                                                        language: isSelected
+                                                            ? prev.language.filter(l => l !== lang)
+                                                            : [...prev.language, lang]
+                                                    }));
+                                                }}
+                                                className={`px-3 py-2.5 rounded-xl items-center justify-center ${
+                                                    isSelected ? 'bg-blue-600' : 'bg-slate-50'
+                                                }`}
+                                                style={{
+                                                    width: buttonWidth,
+                                                    minHeight: 40,
+                                                    shadowColor: isSelected ? '#3b82f6' : '#000',
+                                                    shadowOffset: { width: 0, height: 2 },
+                                                    shadowOpacity: isSelected ? 0.2 : 0.05,
+                                                    shadowRadius: 4,
+                                                    elevation: 2,
+                                                }}
+                                            >
+                                                <View className="flex-row items-center">
+                                                    <View className="w-4 h-4 mr-2 items-center justify-center" style={{ minWidth: 16, minHeight: 16 }}>
+                                                        {isSelected ? (
+                                                            <Text className="text-white text-base font-bold" style={{ lineHeight: 16, fontSize: 16, width: 16, height: 16, textAlign: 'center' }}>✓</Text>
+                                                        ) : (
+                                                            <View
+                                                                className="w-4 h-4 rounded border-2 items-center justify-center border-slate-300"
+                                                                style={{ width: 16, height: 16 }}
+                                                            />
+                                                        )}
+                                                    </View>
+                                                    <Text className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`} numberOfLines={2} style={{ textAlign: 'center' }}>
+                                                        {lang}
+                                                    </Text>
+                                                </View>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </View>
                             </View>
                         </ScrollView>
 

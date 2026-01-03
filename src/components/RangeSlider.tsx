@@ -185,6 +185,62 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
     width: positionMax.value - positionMin.value,
   }));
 
+  // Handle tap on track to move nearest thumb
+  const handleTrackTap = (tapX: number) => {
+    'worklet';
+    if (width <= 0) return;
+    
+    // Calculate which thumb is closer
+    const distanceToMin = Math.abs(tapX - positionMin.value);
+    const distanceToMax = Math.abs(tapX - positionMax.value);
+    
+    // Clamp tap position to valid range
+    const clampedX = Math.max(0, Math.min(width, tapX));
+    
+    if (distanceToMin < distanceToMax) {
+      // Move min thumb
+      const newPos = Math.min(clampedX, positionMax.value);
+      positionMin.value = newPos;
+      // Provide visual feedback
+      minPressed.value = true;
+      minScale.value = withSpring(1.2, { damping: 15, stiffness: 300 });
+      // Update and commit values
+      updatePreviewValues(newPos, positionMax.value);
+      commitValues(newPos, positionMax.value, true);
+      // Reset visual feedback
+      minScale.value = withSpring(1, { damping: 15, stiffness: 300 }, () => {
+        minPressed.value = false;
+      });
+    } else {
+      // Move max thumb
+      const newPos = Math.max(clampedX, positionMin.value);
+      positionMax.value = newPos;
+      // Provide visual feedback
+      maxPressed.value = true;
+      maxScale.value = withSpring(1.2, { damping: 15, stiffness: 300 });
+      // Update and commit values
+      updatePreviewValues(positionMin.value, newPos);
+      commitValues(positionMin.value, newPos, false);
+      // Reset visual feedback
+      maxScale.value = withSpring(1, { damping: 15, stiffness: 300 }, () => {
+        maxPressed.value = false;
+      });
+    }
+  };
+
+  const trackTapGesture = Gesture.Tap()
+    .maxDuration(250)
+    .onEnd((e) => {
+      'worklet';
+      // Only handle tap if not dragging and width is set
+      if (!isDragging.value && width > 0) {
+        // Get tap position relative to track container
+        // Account for marginHorizontal: 10, padding doesn't affect X position
+        const tapX = Math.max(0, Math.min(width, e.x - 10)); // 10 is marginHorizontal
+        handleTrackTap(tapX);
+      }
+    });
+
   const handleMinInputChange = (text: string) => {
     const cleanedText = text.replace(/[^0-9.]/g, '');
     setMinInputText(cleanedText);
@@ -243,36 +299,38 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
 
       <View style={styles.header}>
         <InputBox 
-          label="MINIMUM" 
+          label="MİNİMUM" 
           value={minInputText !== null ? minInputText : formatValue(previewMinValue)} 
           onChange={handleMinInputChange}
           onBlur={handleMinInputBlur}
         />
         <Text style={styles.separator}>-</Text>
         <InputBox 
-          label="MAXIMUM" 
+          label="MAKSİMUM" 
           value={maxInputText !== null ? maxInputText : formatValue(previewMaxValue)} 
           onChange={handleMaxInputChange}
           onBlur={handleMaxInputBlur}
         />
       </View>
 
-      <View style={styles.trackContainer} onLayout={onLayout}>
-        <View style={styles.trackBackground} />
-        <Animated.View style={[styles.trackActive, trackStyle]} />
+      <GestureDetector gesture={trackTapGesture}>
+        <View style={styles.trackContainer} onLayout={onLayout}>
+          <View style={styles.trackBackground} />
+          <Animated.View style={[styles.trackActive, trackStyle]} />
 
-        <GestureDetector gesture={minGesture}>
-          <Animated.View style={[styles.thumb, minThumbStyle]}>
-            <Animated.View style={[styles.thumbInner, minThumbInnerStyle]} />
-          </Animated.View>
-        </GestureDetector>
+          <GestureDetector gesture={minGesture}>
+            <Animated.View style={[styles.thumb, minThumbStyle]}>
+              <Animated.View style={[styles.thumbInner, minThumbInnerStyle]} />
+            </Animated.View>
+          </GestureDetector>
 
-        <GestureDetector gesture={maxGesture}>
-          <Animated.View style={[styles.thumb, maxThumbStyle]}>
-            <Animated.View style={[styles.thumbInner, maxThumbInnerStyle]} />
-          </Animated.View>
-        </GestureDetector>
-      </View>
+          <GestureDetector gesture={maxGesture}>
+            <Animated.View style={[styles.thumb, maxThumbStyle]}>
+              <Animated.View style={[styles.thumbInner, maxThumbInnerStyle]} />
+            </Animated.View>
+          </GestureDetector>
+        </View>
+      </GestureDetector>
     </GestureHandlerRootView>
   );
 };
@@ -350,6 +408,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     // Removed width: '100%' so margins can take effect properly
     marginHorizontal: 10, // Adds spacing from the edges
+    // Add padding to increase touchable area (like the CSS solution)
+    paddingVertical: 18, // Increases vertical touchable area significantly
+    paddingHorizontal: 0,
+    // Make the entire padded area touchable with transparent background
+    backgroundColor: 'transparent',
   },
   trackBackground: {
     height: 3, // Reduced from 4 for a sleeker look
