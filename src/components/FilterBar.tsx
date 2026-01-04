@@ -1,6 +1,6 @@
 import { Filter, X, Search } from 'lucide-react-native'; // Added Search icon
 import React, { useState } from 'react';
-import { ScrollView, Text, TextInput, TouchableOpacity, View, Pressable } from 'react-native';
+import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import * as Haptics from 'expo-haptics'; // Optional: Add for better UX
 import { useFilterStore } from '../store/filterStore';
 import { useUserStore } from '../store/userStore';
@@ -17,7 +17,25 @@ const SUB_CATEGORIES: Record<string, string[]> = {
 };
 
 export const FilterBar = () => {
-    const { searchQuery, setSearchQuery, year, scoreType, city, department, selectedYksCalculationId, setFilter } = useFilterStore();
+    const { 
+        searchQuery, 
+        setSearchQuery, 
+        year, 
+        scoreType, 
+        city, 
+        department, 
+        university,
+        quotaType,
+        language,
+        minScore,
+        maxScore,
+        minRank,
+        maxRank,
+        sortBy,
+        sortOrder,
+        selectedYksCalculationId, 
+        setFilter 
+    } = useFilterStore();
     const { yksCalculations } = useUserStore();
     const [isFilterModalVisible, setFilterModalVisible] = useState(false);
     
@@ -70,11 +88,12 @@ export const FilterBar = () => {
             </View>
 
             {/* Main Categories Row */}
-            <View className="flex-row items-center mt-3 px-4 gap-2.5">
+            <View className="flex-row items-center mt-3 px-4 gap-2.5 mb-1">
                 {CATEGORIES.map((cat) => (
-                    <Pressable
+                    <TouchableOpacity
                         key={cat}
                         onPress={() => handleCategoryPress(cat)}
+                        activeOpacity={0.7}
                         className={`flex-1 py-5 px-3 justify-center items-center rounded-2xl shadow-sm ${
                             scoreType === cat
                                 ? 'bg-blue-600 shadow-blue-200'
@@ -95,7 +114,7 @@ export const FilterBar = () => {
                         >
                             {cat}
                         </Text>
-                    </Pressable>
+                    </TouchableOpacity>
                 ))}
 
                 <TouchableOpacity
@@ -124,11 +143,11 @@ export const FilterBar = () => {
 
             {/* Sub Categories */}
             {scoreType && SUB_CATEGORIES[scoreType] && (
-                <View style={{ marginTop: 5, paddingTop: 8 }}>
+                <View className="mt-3 px-4 mb-2">
                      <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+                        contentContainerStyle={{ gap: 8 }}
                     >
                         {SUB_CATEGORIES[scoreType].map((sub) => {
                             const isSelected = department === sub;
@@ -163,17 +182,19 @@ export const FilterBar = () => {
                 </View>
             )}
 
-            {/* Active Chips (Year/City/YKS Calculation) */}
-            {(year || city || selectedYksCalculation) && (
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
-                    className="mt-4"
-                >
+            {/* Active Filter Tags */}
+            {(selectedYksCalculation || year || city || university || quotaType || 
+              (language && language.length > 0) || minScore !== null || maxScore !== null || 
+              minRank !== null || maxRank !== null || sortBy) && (
+                <View className="mt-3 px-4 mb-2">
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ gap: 8 }}
+                    >
                     {selectedYksCalculation && (
                         <TouchableOpacity
-                            className="bg-blue-100 px-5 py-3 rounded-full border-2 border-blue-200 flex-row items-center"
+                            className="bg-blue-100 px-4 py-2.5 rounded-full border-2 border-blue-200 flex-row items-center"
                             onPress={() => {
                                 Haptics.selectionAsync();
                                 setFilter('selectedYksCalculationId', null);
@@ -194,47 +215,179 @@ export const FilterBar = () => {
                     )}
                     {year && (
                         <TouchableOpacity
-                            className="bg-indigo-100 px-5 py-3 rounded-full border-2 border-indigo-200 flex-row items-center"
+                            className="bg-blue-100 px-4 py-2.5 rounded-full border-2 border-blue-200 flex-row items-center"
                             onPress={() => {
                                 Haptics.selectionAsync();
                                 setFilter('year', null);
                             }}
                             style={{
-                                shadowColor: '#6366f1',
+                                shadowColor: '#3b82f6',
                                 shadowOffset: { width: 0, height: 1 },
                                 shadowOpacity: 0.1,
                                 shadowRadius: 2,
                                 elevation: 2,
                             }}
                         >
-                            <Text className="text-xs font-semibold text-indigo-700 mr-2">
+                            <Text className="text-xs font-semibold text-blue-700 mr-2">
                                 {year}
                             </Text>
-                            <X size={14} color="#4338ca" strokeWidth={2.5} />
+                            <X size={14} color="#1e40af" strokeWidth={2.5} />
                         </TouchableOpacity>
                     )}
                     {city && (
                         <TouchableOpacity
-                            className="bg-indigo-100 px-5 py-3 rounded-full border-2 border-indigo-200 flex-row items-center"
+                            className="bg-blue-100 px-4 py-2.5 rounded-full border-2 border-blue-200 flex-row items-center"
                             onPress={() => {
                                 Haptics.selectionAsync();
                                 setFilter('city', null);
                             }}
                             style={{
-                                shadowColor: '#6366f1',
+                                shadowColor: '#3b82f6',
                                 shadowOffset: { width: 0, height: 1 },
                                 shadowOpacity: 0.1,
                                 shadowRadius: 2,
                                 elevation: 2,
                             }}
                         >
-                            <Text className="text-xs font-semibold text-indigo-700 mr-2">
+                            <Text className="text-xs font-semibold text-blue-700 mr-2">
                                 {city}
                             </Text>
-                            <X size={14} color="#4338ca" strokeWidth={2.5} />
+                            <X size={14} color="#1e40af" strokeWidth={2.5} />
                         </TouchableOpacity>
                     )}
-                </ScrollView>
+                    {university && (
+                        <TouchableOpacity
+                            className="bg-blue-100 px-4 py-2.5 rounded-full border-2 border-blue-200 flex-row items-center"
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                setFilter('university', null);
+                            }}
+                            style={{
+                                shadowColor: '#3b82f6',
+                                shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 2,
+                                elevation: 2,
+                            }}
+                        >
+                            <Text className="text-xs font-semibold text-blue-700 mr-2">
+                                {university}
+                            </Text>
+                            <X size={14} color="#1e40af" strokeWidth={2.5} />
+                        </TouchableOpacity>
+                    )}
+                    {quotaType && (
+                        <TouchableOpacity
+                            className="bg-blue-100 px-4 py-2.5 rounded-full border-2 border-blue-200 flex-row items-center"
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                setFilter('quotaType', null);
+                            }}
+                            style={{
+                                shadowColor: '#3b82f6',
+                                shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 2,
+                                elevation: 2,
+                            }}
+                        >
+                            <Text className="text-xs font-semibold text-blue-700 mr-2">
+                                {quotaType}
+                            </Text>
+                            <X size={14} color="#1e40af" strokeWidth={2.5} />
+                        </TouchableOpacity>
+                    )}
+                    {language && language.length > 0 && language.map((lang) => (
+                        <TouchableOpacity
+                            key={lang}
+                            className="bg-blue-100 px-4 py-2.5 rounded-full border-2 border-blue-200 flex-row items-center"
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                const newLanguage = language.filter(l => l !== lang);
+                                setFilter('language', newLanguage.length > 0 ? newLanguage : null);
+                            }}
+                            style={{
+                                shadowColor: '#3b82f6',
+                                shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 2,
+                                elevation: 2,
+                            }}
+                        >
+                            <Text className="text-xs font-semibold text-blue-700 mr-2">
+                                {lang}
+                            </Text>
+                            <X size={14} color="#1e40af" strokeWidth={2.5} />
+                        </TouchableOpacity>
+                    ))}
+                    {(minScore !== null || maxScore !== null) && (
+                        <TouchableOpacity
+                            className="bg-blue-100 px-4 py-2.5 rounded-full border-2 border-blue-200 flex-row items-center"
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                setFilter('minScore', null);
+                                setFilter('maxScore', null);
+                            }}
+                            style={{
+                                shadowColor: '#3b82f6',
+                                shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 2,
+                                elevation: 2,
+                            }}
+                        >
+                            <Text className="text-xs font-semibold text-blue-700 mr-2">
+                                Puan: {minScore !== null ? minScore.toFixed(0) : '0'} - {maxScore !== null ? maxScore.toFixed(0) : '600'}
+                            </Text>
+                            <X size={14} color="#1e40af" strokeWidth={2.5} />
+                        </TouchableOpacity>
+                    )}
+                    {(minRank !== null || maxRank !== null) && (
+                        <TouchableOpacity
+                            className="bg-blue-100 px-4 py-2.5 rounded-full border-2 border-blue-200 flex-row items-center"
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                setFilter('minRank', null);
+                                setFilter('maxRank', null);
+                            }}
+                            style={{
+                                shadowColor: '#3b82f6',
+                                shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 2,
+                                elevation: 2,
+                            }}
+                        >
+                            <Text className="text-xs font-semibold text-blue-700 mr-2">
+                                Sıralama: {minRank !== null ? minRank.toLocaleString() : '1'} - {maxRank !== null ? maxRank.toLocaleString() : '2.6M'}
+                            </Text>
+                            <X size={14} color="#1e40af" strokeWidth={2.5} />
+                        </TouchableOpacity>
+                    )}
+                    {sortBy && (
+                        <TouchableOpacity
+                            className="bg-blue-100 px-4 py-2.5 rounded-full border-2 border-blue-200 flex-row items-center"
+                            onPress={() => {
+                                Haptics.selectionAsync();
+                                setFilter('sortBy', null);
+                                setFilter('sortOrder', 'desc');
+                            }}
+                            style={{
+                                shadowColor: '#3b82f6',
+                                shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 2,
+                                elevation: 2,
+                            }}
+                        >
+                            <Text className="text-xs font-semibold text-blue-700 mr-2">
+                                Sırala: {sortBy === 'score' ? 'Puan' : sortBy === 'rank' ? 'Sıralama' : sortBy === 'quota' ? 'Kontenjan' : 'Yıl'} ({sortOrder === 'asc' ? 'Artan' : 'Azalan'})
+                            </Text>
+                            <X size={14} color="#1e40af" strokeWidth={2.5} />
+                        </TouchableOpacity>
+                    )}
+                    </ScrollView>
+                </View>
             )}
         </View>
     );

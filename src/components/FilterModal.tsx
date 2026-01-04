@@ -606,7 +606,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
 
                         {/* Footer Actions */}
                         <View className="px-5 pt-4 pb-4 border-t border-slate-100 bg-slate-50">
-                            <View className="flex-row gap-3">
+                            <View className="flex-row gap-3 mb-4">
                                 <TouchableOpacity
                                     onPress={handleClear}
                                     className="flex-1 py-3 rounded-full items-center justify-center bg-white"

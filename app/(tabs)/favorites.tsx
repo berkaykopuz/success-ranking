@@ -1236,8 +1236,8 @@ function MainMenuScreen({ onOpenPastScores, onOpenLists, onOpenNetFormStatus }: 
                     className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm active:scale-[0.98]"
                 >
                     <View className="flex-row items-center">
-                        <View className="bg-indigo-50 p-3 rounded-xl mr-4">
-                            <BarChart3 size={28} color="#6366f1" />
+                        <View className="bg-green-50 p-3 rounded-xl mr-4">
+                            <BarChart3 size={28} color="#22c55e" />
                         </View>
                         <View className="flex-1">
                             <Text className="text-xl font-bold text-slate-800 mb-1">
@@ -1270,6 +1270,8 @@ const EXAM_COLORS = [
 ];
 
 function ComparisonChart({ calculations, type }: ComparisonChartProps) {
+    const [selectedDot, setSelectedDot] = useState<{ seriesIndex: number; pointIndex: number } | null>(null);
+
     // Handle empty calculations array
     if (!calculations || calculations.length === 0) {
         return (
@@ -1380,6 +1382,9 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
             color: EXAM_COLORS[calcIndex % EXAM_COLORS.length],
             points,
             date: new Date(calc.createdAt),
+            calculation: calc,
+            subjects: subjects,
+            nets: nets,
         };
     });
 
@@ -1432,7 +1437,11 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
 
     return (
         <View>
-            <View className="relative" style={{ height: chartHeight }}>
+            <Pressable 
+                className="relative" 
+                style={{ height: chartHeight }}
+                onPress={() => setSelectedDot(null)}
+            >
                 {/* Y-Axis */}
                 <View
                     className="absolute bg-slate-300"
@@ -1512,28 +1521,88 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
 
                 {/* Points for each calculation */}
                 {validSeriesData.map((series, seriesIndex) => {
-                    return series.points.map((point, pointIndex) => (
-                        <View
-                            key={`point-${seriesIndex}-${pointIndex}`}
-                            className="absolute"
-                            style={{
-                                left: point.x - 5,
-                                top: point.y - 5,
-                                width: 10,
-                                height: 10,
-                                borderRadius: 5,
-                                backgroundColor: series.color,
-                                borderWidth: 2,
-                                borderColor: '#ffffff',
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 1 },
-                                shadowOpacity: 0.2,
-                                shadowRadius: 2,
-                                elevation: 2,
-                            }}
-                        />
-                    ));
+                    return series.points.map((point, pointIndex) => {
+                        const isSelected = selectedDot?.seriesIndex === seriesIndex && selectedDot?.pointIndex === pointIndex;
+                        return (
+                            <TouchableOpacity
+                                key={`point-${seriesIndex}-${pointIndex}`}
+                                className="absolute"
+                                style={{
+                                    left: point.x - 8,
+                                    top: point.y - 8,
+                                    width: 16,
+                                    height: 16,
+                                    borderRadius: 8,
+                                    backgroundColor: series.color,
+                                    borderWidth: 2,
+                                    borderColor: '#ffffff',
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 1 },
+                                    shadowOpacity: 0.2,
+                                    shadowRadius: 2,
+                                    elevation: 2,
+                                    zIndex: 10,
+                                }}
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    Haptics.selectionAsync();
+                                    if (isSelected) {
+                                        setSelectedDot(null);
+                                    } else {
+                                        setSelectedDot({ seriesIndex, pointIndex });
+                                    }
+                                }}
+                                activeOpacity={0.7}
+                            />
+                        );
+                    });
                 })}
+
+                {/* Tooltip for selected dot */}
+                {selectedDot && (() => {
+                    const series = validSeriesData[selectedDot.seriesIndex];
+                    const point = series.points[selectedDot.pointIndex];
+                    const subjectIndex = selectedDot.pointIndex;
+                    const subject = series.subjects[subjectIndex];
+                    const net = series.nets[subjectIndex];
+                    const tooltipWidth = 200;
+                    const tooltipLeft = Math.max(10, Math.min(point.x - tooltipWidth / 2, chartWidth - tooltipWidth - 10));
+                    // Position tooltip above the dot, or below if not enough space
+                    const tooltipHeight = 80;
+                    const tooltipTop = point.y - tooltipHeight - 10 < paddingTop 
+                        ? point.y + 20 
+                        : point.y - tooltipHeight - 10;
+                    
+                    return (
+                        <Pressable
+                            className="absolute bg-white rounded-xl shadow-lg border border-slate-200 p-3"
+                            style={{
+                                left: tooltipLeft,
+                                top: tooltipTop,
+                                width: tooltipWidth,
+                                zIndex: 100,
+                            }}
+                            onPress={(e) => {
+                                e.stopPropagation();
+                                setSelectedDot(null);
+                            }}
+                        >
+                            <Text className="text-base font-bold text-slate-800 mb-2">
+                                {series.name}
+                            </Text>
+                            <View className="border-t border-slate-100 pt-2">
+                                <View className="flex-row justify-between items-center">
+                                    <Text className="text-sm text-slate-600 flex-1">
+                                        {subject}
+                                    </Text>
+                                    <Text className="text-sm font-semibold text-slate-800 ml-2">
+                                        {net.toFixed(2)}
+                                    </Text>
+                                </View>
+                            </View>
+                        </Pressable>
+                    );
+                })()}
 
                 {/* X-Axis Labels */}
                 {subjects.map((subject, index) => {
@@ -1558,7 +1627,7 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
                         </View>
                     );
                 })}
-            </View>
+            </Pressable>
 
             {/* Legend */}
             <View className="mt-4 pt-4 border-t border-slate-200">

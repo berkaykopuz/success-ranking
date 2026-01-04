@@ -141,7 +141,7 @@ export const fetchRankings = async (
     if (filters.quotaType) {
         if (filters.quotaType === 'Devlet') {
             filtered = filtered.filter(item => item.quotaType === null);
-        } else if (filters.quotaType === 'Vakif') {
+        } else if (filters.quotaType === 'Vakıf' || filters.quotaType === 'Vakif') {
             filtered = filtered.filter(item => item.quotaType !== null);
         }
     }
@@ -255,7 +255,7 @@ export const fetchFilterOptions = async (): Promise<FilterOptions> => {
     const cities = Array.from(new Set(processedData.map(d => d.city))).sort();
     const universities = Array.from(new Set(processedData.map(d => d.universityName))).sort();
     const departments = Array.from(new Set(processedData.map(d => d.departmentName))).sort();
-    const quotaTypes = ['Devlet', 'Vakif'];
+    const quotaTypes = ['Devlet', 'Vakıf'];
 
     return {
         years,
