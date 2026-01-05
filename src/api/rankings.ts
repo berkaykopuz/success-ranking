@@ -297,3 +297,173 @@ export const fetchRankingDetails = async (id: string): Promise<RankingDetail> =>
         website: `https://www.${item.universityName.replace(/\s+/g, '').toLowerCase()}.edu.tr`,
     };
 };
+
+/**
+ * Estimates the ranking (basari siralamasi) based on a given yerleştirme puanı (placement score) and score type
+ * 
+ * IMPORTANT:
+ * - Only compares programs with the exact same score_type (TYT with TYT, SAY with SAY, etc.)
+ * - Compares yerleştirme puanı values: user's yerleştirme puanı vs program's taban_puan (which is also yerleştirme puanı)
+ * - Uses only 2025 data for consistency
+ * - Each exam type (TYT, SAY, EA, SÖZ, DİL) has its own ranking scale
+ * 
+ * @param yerlesmePuani The user's yerleştirme puanı (placement score) for the specific exam type
+ * @param scoreType The score type (TYT, SAY, EA, SÖZ, DİL) - must match exactly with JSON score_type values
+ * @returns Estimated ranking or null if cannot be estimated
+ */
+export const estimateRanking = (yerlesmePuani: number, scoreType: string): number | null => {
+    if (yerlesmePuani <= 0) return null;
+    if (!scoreType || scoreType.trim() === '') return null;
+
+    const rawData = application as unknown as RawRankingItem[];
+    
+    // Filter programs by exact score_type match - this is critical for accurate ranking estimation
+    // Each exam type (TYT, SAY, EA, SÖZ, DİL) has its own yerleştirme puanı scale and ranking
+    // Only programs with the same score_type should be compared
+    // taban_puan in the JSON is the minimum yerleştirme puanı needed to get into that program (also a yerleştirme puanı)
+    const relevantPrograms: Array<{ tabanPuan: number; basariSirasi: number }> = [];
+    
+    rawData.forEach((item) => {
+        // Strict comparison: only include programs with exact score_type match
+        // This ensures TYT scores are only compared with TYT programs, SAY with SAY, etc.
+        if (item.score_type !== scoreType) {
+            return; // Skip programs with different score_type
+        }
+        
+        // Always use 2025 data only - skip programs without 2025 data
+        const year2025 = item.years.find(y => y.year === 2025);
+        if (!year2025) {
+            return; // Skip programs that don't have 2025 data
+        }
+        
+        // Only include programs with valid 2025 taban_puan and basari_sirasi
+        if (year2025.taban_puan > 0 && year2025.basari_sirasi !== null) {
+            relevantPrograms.push({
+                tabanPuan: year2025.taban_puan,
+                basariSirasi: year2025.basari_sirasi,
+            });
+        }
+    });
+
+    // Validate that we have programs with matching score_type
+    if (relevantPrograms.length === 0) {
+        // No programs found with the specified score_type - this could indicate:
+        // 1. Invalid score_type parameter
+        // 2. No data available for this score_type
+        return null;
+    }
+
+    // Sort by taban_puan (yerleştirme puanı) descending (higher scores = better ranks)
+    // All programs in this array have been filtered to match the exact score_type
+    // This ensures TYT yerleştirme puanı is only compared with TYT taban_puan, SAY with SAY, etc.
+    relevantPrograms.sort((a, b) => b.tabanPuan - a.tabanPuan);
+
+    // First, check if there's a program with taban_puan very close to user's yerleştirme puanı
+    // If found and close enough, return that program's basari_sirasi directly
+    const closeMatchThreshold = 0.5; // Consider it a match if within 0.5 points
+    let closestMatch: { tabanPuan: number; basariSirasi: number; diff: number } | null = null;
+    
+    for (const program of relevantPrograms) {
+        const diff = Math.abs(program.tabanPuan - yerlesmePuani);
+        if (diff <= closeMatchThreshold) {
+            // If this is the first match or closer than previous match, use it
+            if (!closestMatch || diff < closestMatch.diff) {
+                closestMatch = { tabanPuan: program.tabanPuan, basariSirasi: program.basariSirasi, diff };
+            }
+        }
+    }
+    
+    // If we found a close match, return its basari_sirasi directly
+    if (closestMatch) {
+        return closestMatch.basariSirasi;
+    }
+
+    // If no close match found, proceed with interpolation
+    // Find the closest programs to the user's yerleştirme puanı for interpolation
+    // We're comparing yerleştirme puanı values: user's yerleştirme puanı vs program's taban_puan (yerleştirme puanı)
+    // closestLower: program with highest taban_puan (yerleştirme puanı) that is <= user's yerleştirme puanı (user can get into this)
+    // closestHigher: program with lowest taban_puan (yerleştirme puanı) that is > user's yerleştirme puanı (user cannot get into this)
+    let closestLower: { tabanPuan: number; basariSirasi: number } | null = null;
+    let closestHigher: { tabanPuan: number; basariSirasi: number } | null = null;
+
+    for (const program of relevantPrograms) {
+        // Compare yerleştirme puanı values: user's yerleştirme puanı vs program's taban_puan (yerleştirme puanı)
+        if (program.tabanPuan <= yerlesmePuani) {
+            // User's yerleştirme puanı is >= this program's taban_puan (yerleştirme puanı), so they can get in
+            // We want the highest taban_puan (yerleştirme puanı) that user can still get into
+            if (!closestLower || program.tabanPuan > closestLower.tabanPuan) {
+                closestLower = { tabanPuan: program.tabanPuan, basariSirasi: program.basariSirasi };
+            }
+        } else {
+            // User's yerleştirme puanı is < this program's taban_puan (yerleştirme puanı), so they cannot get in
+            // We want the lowest taban_puan (yerleştirme puanı) that user cannot get into
+            if (!closestHigher || program.tabanPuan < closestHigher.tabanPuan) {
+                closestHigher = { tabanPuan: program.tabanPuan, basariSirasi: program.basariSirasi };
+            }
+        }
+    }
+
+    // If we have both lower and higher bounds, interpolate between them for accurate ranking
+    // This ensures the ranking changes dynamically as the yerleştirme puanı changes
+    if (closestLower && closestHigher) {
+        const scoreDiff = closestHigher.tabanPuan - closestLower.tabanPuan; // Difference in yerleştirme puanı
+        const rankDiff = closestHigher.basariSirasi - closestLower.basariSirasi;
+        const userScoreDiff = yerlesmePuani - closestLower.tabanPuan; // User's yerleştirme puanı difference
+        
+        if (Math.abs(scoreDiff) > 0.001) {
+            // Linear interpolation: higher yerleştirme puanı = better (lower) rank
+            // Since ranks are in ascending order (1 is best, higher number is worse)
+            // and yerleştirme puanı values are in descending order (higher score is better)
+            // we interpolate: rank = lowerRank + (rankDiff * (userScoreDiff / scoreDiff))
+            const estimatedRank = closestLower.basariSirasi + (rankDiff * (userScoreDiff / scoreDiff));
+            return Math.max(1, Math.round(estimatedRank));
+        } else {
+            // If scores are very close, use the average rank
+            return Math.round((closestLower.basariSirasi + closestHigher.basariSirasi) / 2);
+        }
+    }
+
+    // If we only have a lower bound (user's score is very high), estimate based on score difference
+    if (closestLower) {
+        // Find the next program with lower taban_puan to estimate ranking trend
+        const programsWithLowerScore = relevantPrograms.filter(p => p.tabanPuan < closestLower!.tabanPuan);
+        if (programsWithLowerScore.length > 0) {
+            // Get the program with the highest score among those with lower scores
+            const nextLower = programsWithLowerScore.reduce((max, p) => p.tabanPuan > max.tabanPuan ? p : max);
+            const scoreDiff = closestLower.tabanPuan - nextLower.tabanPuan;
+            const rankDiff = closestLower.basariSirasi - nextLower.basariSirasi;
+            const userScoreDiff = yerlesmePuani - closestLower.tabanPuan;
+            
+            if (Math.abs(scoreDiff) > 0.001) {
+                // Extrapolate: user has higher score than closestLower, so better (lower) rank
+                // Higher score means lower rank, so we subtract
+                const estimatedRank = closestLower.basariSirasi - (rankDiff * (userScoreDiff / scoreDiff));
+                return Math.max(1, Math.round(estimatedRank));
+            }
+        }
+        return closestLower.basariSirasi;
+    }
+
+    // If we only have a higher bound (user's score is very low), estimate based on score difference
+    if (closestHigher) {
+        // Find the next program with higher taban_puan to estimate ranking trend
+        const programsWithHigherScore = relevantPrograms.filter(p => p.tabanPuan > closestHigher!.tabanPuan);
+        if (programsWithHigherScore.length > 0) {
+            // Get the program with the lowest score among those with higher scores
+            const nextHigher = programsWithHigherScore.reduce((min, p) => p.tabanPuan < min.tabanPuan ? p : min);
+            const scoreDiff = nextHigher.tabanPuan - closestHigher.tabanPuan;
+            const rankDiff = nextHigher.basariSirasi - closestHigher.basariSirasi;
+            const userScoreDiff = closestHigher.tabanPuan - yerlesmePuani;
+            
+            if (Math.abs(scoreDiff) > 0.001) {
+                // Extrapolate: user has lower score than closestHigher, so worse (higher) rank
+                // Lower score means higher rank, so we add
+                const estimatedRank = closestHigher.basariSirasi + (rankDiff * (userScoreDiff / scoreDiff));
+                return Math.max(1, Math.round(estimatedRank));
+            }
+        }
+        return closestHigher.basariSirasi;
+    }
+
+    return null;
+};

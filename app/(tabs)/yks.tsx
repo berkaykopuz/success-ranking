@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserStore } from '../../src/store/userStore';
 import { Save } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
+import { estimateRanking } from '../../src/api/rankings';
 
 // TYT Dersleri
 type TYTSectionKey = 'turkce' | 'matematik' | 'sosyal' | 'fen';
@@ -76,14 +77,14 @@ const getNet = (inputs: NetInputs) => {
   return net < 0 ? 0 : net;
 };
 
-// TYT Ham Puan: 145.47 + (TrNet * 2.83) + (SosNet * 2.99) + (MatNet * 3.28) + (FenNet * 2.53)
+// TYT Ham Puan: 145.20 + (TrNet * 2.83) + (SosNet * 2.99) + (MatNet * 3.28) + (FenNet * 2.53)
 const calculateTYTHamPuan = (
   turkceNet: number,
   matNet: number,
   sosyalNet: number,
   fenNet: number
 ) => {
-  const base = 145.47;
+  const base = 145.20;
   return base + 
     (turkceNet * 2.83) + 
     (sosyalNet * 2.99) + 
@@ -359,9 +360,9 @@ export default function YksNetScreen() {
     );
   }, [passesBaraj, turkceNet, matematikNet, sosyalNet, fenNet, aytYdtNet]);
 
-  // Diploma notu
+  // Diploma notu (If not provided, assume 80)
   const diplomaNotu = useMemo(() => {
-    return parseFloat(diplomaGrade.replace(',', '.')) || 0;
+    return parseFloat(diplomaGrade.replace(',', '.')) || 80;
   }, [diplomaGrade]);
 
   // OBP katsayısı (Kırık OBP ise 0.3, değilse 0.6)
@@ -380,6 +381,32 @@ export default function YksNetScreen() {
   const eaYerlesme = useMemo(() => eaHamPuan + obpEkPuan, [eaHamPuan, obpEkPuan]);
   const sozYerlesme = useMemo(() => sozHamPuan + obpEkPuan, [sozHamPuan, obpEkPuan]);
   const dilYerlesme = useMemo(() => dilHamPuan + obpEkPuan, [dilHamPuan, obpEkPuan]);
+
+  // Tahmini Başarı Sıralamaları
+  const tytEstimatedRank = useMemo(() => {
+    if (!passesBaraj || tytYerlesme <= 0) return null;
+    return estimateRanking(tytYerlesme, 'TYT');
+  }, [passesBaraj, tytYerlesme]);
+
+  const sayEstimatedRank = useMemo(() => {
+    if (!passesBaraj || sayYerlesme <= 0 || (aytMatNet === 0 && aytFizikNet === 0 && aytKimyaNet === 0 && aytBiyolojiNet === 0)) return null;
+    return estimateRanking(sayYerlesme, 'SAY');
+  }, [passesBaraj, sayYerlesme, aytMatNet, aytFizikNet, aytKimyaNet, aytBiyolojiNet]);
+
+  const eaEstimatedRank = useMemo(() => {
+    if (!passesBaraj || eaYerlesme <= 0 || (aytMatNet === 0 && aytEdebiyatNet === 0 && aytTarih1Net === 0 && aytCografya1Net === 0)) return null;
+    return estimateRanking(eaYerlesme, 'EA');
+  }, [passesBaraj, eaYerlesme, aytMatNet, aytEdebiyatNet, aytTarih1Net, aytCografya1Net]);
+
+  const sozEstimatedRank = useMemo(() => {
+    if (!passesBaraj || sozYerlesme <= 0 || (aytEdebiyatNet === 0 && aytTarih1Net === 0 && aytCografya1Net === 0)) return null;
+    return estimateRanking(sozYerlesme, 'SÖZ');
+  }, [passesBaraj, sozYerlesme, aytEdebiyatNet, aytTarih1Net, aytCografya1Net]);
+
+  const dilEstimatedRank = useMemo(() => {
+    if (!passesBaraj || dilYerlesme <= 0 || aytYdtNet === 0) return null;
+    return estimateRanking(dilYerlesme, 'DİL');
+  }, [passesBaraj, dilYerlesme, aytYdtNet]);
 
   const handleSave = () => {
     if (!passesBaraj) {
@@ -450,7 +477,7 @@ export default function YksNetScreen() {
             </View>
           </View>
           <Text className="text-xs text-slate-500 mb-4 ml-0">
-            Başlangıç: 145.47
+            Başlangıç: 145.20
           </Text>
 
           <SectionRow
@@ -810,6 +837,14 @@ export default function YksNetScreen() {
                   </Text>
                 </View>
               )}
+              {tytEstimatedRank !== null && (
+                <View className="flex-row items-center justify-between pt-1 border-t border-blue-200">
+                  <Text className="text-xs text-blue-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                  <Text className="text-base font-bold text-blue-700">
+                    {tytEstimatedRank.toLocaleString('tr-TR')}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -830,6 +865,14 @@ export default function YksNetScreen() {
                   <Text className="text-xs text-emerald-600 font-medium">Yerleştirme Puanı</Text>
                   <Text className="text-base font-bold text-emerald-700">
                     {sayYerlesme.toFixed(3).replace('.', ',')}
+                  </Text>
+                </View>
+              )}
+              {sayEstimatedRank !== null && (
+                <View className="flex-row items-center justify-between pt-1 border-t border-emerald-200">
+                  <Text className="text-xs text-emerald-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                  <Text className="text-base font-bold text-emerald-700">
+                    {sayEstimatedRank.toLocaleString('tr-TR')}
                   </Text>
                 </View>
               )}
@@ -856,6 +899,14 @@ export default function YksNetScreen() {
                   </Text>
                 </View>
               )}
+              {sozEstimatedRank !== null && (
+                <View className="flex-row items-center justify-between pt-1 border-t border-orange-200">
+                  <Text className="text-xs text-orange-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                  <Text className="text-base font-bold text-orange-700">
+                    {sozEstimatedRank.toLocaleString('tr-TR')}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -879,6 +930,14 @@ export default function YksNetScreen() {
                   </Text>
                 </View>
               )}
+              {eaEstimatedRank !== null && (
+                <View className="flex-row items-center justify-between pt-1 border-t border-purple-200">
+                  <Text className="text-xs text-purple-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                  <Text className="text-base font-bold text-purple-700">
+                    {eaEstimatedRank.toLocaleString('tr-TR')}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -899,6 +958,14 @@ export default function YksNetScreen() {
                   <Text className="text-xs text-rose-600 font-medium">Yerleştirme Puanı</Text>
                   <Text className="text-base font-bold text-rose-700">
                     {dilYerlesme.toFixed(3).replace('.', ',')}
+                  </Text>
+                </View>
+              )}
+              {dilEstimatedRank !== null && (
+                <View className="flex-row items-center justify-between pt-1 border-t border-rose-200">
+                  <Text className="text-xs text-rose-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                  <Text className="text-base font-bold text-rose-700">
+                    {dilEstimatedRank.toLocaleString('tr-TR')}
                   </Text>
                 </View>
               )}
