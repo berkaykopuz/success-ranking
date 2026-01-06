@@ -92,7 +92,7 @@ const calculateTYTHamPuan = (
     (fenNet * 2.53);
 };
 
-// SAY Ham Puan: 132.87 + TYT Katkısı + AYT Katkısı
+// SAY Ham Puan: 132.74 + TYT Katkısı + AYT Katkısı
 // TYT Katkısı: (TrNet * 1.20) + (SosNet * 1.27) + (MatNet * 1.39) + (FenNet * 1.07)
 // AYT Katkısı: (AYT Mat * 2.89) + (Fizik * 2.46) + (Kimya * 2.53) + (Biyoloji * 2.61)
 const calculateSAYHamPuan = (
@@ -105,7 +105,7 @@ const calculateSAYHamPuan = (
   kimyaNet: number,
   biyolojiNet: number
 ) => {
-  const base = 132.87;
+  const base = 132.74;
   const tytKatkisi = 
     (turkceNet * 1.20) + 
     (sosyalNet * 1.27) + 
@@ -119,7 +119,7 @@ const calculateSAYHamPuan = (
   return base + tytKatkisi + aytKatkisi;
 };
 
-// EA Ham Puan: 129.34 + TYT Katkısı + AYT Katkısı
+// EA Ham Puan: 122.44 + TYT Katkısı + AYT Katkısı
 // TYT Katkısı: (TrNet * 1.19) + (SosNet * 1.26) + (MatNet * 1.38) + (FenNet * 1.07)
 // AYT Katkısı: (AYT Mat * 2.88) + (Edebiyat * 2.94) + (Tarih1 * 2.53) + (Cog1 * 2.85)
 const calculateEAHamPuan = (
@@ -132,7 +132,7 @@ const calculateEAHamPuan = (
   tarih1Net: number,
   cografya1Net: number
 ) => {
-  const base = 129.34;
+  const base = 122.44;
   const tytKatkisi = 
     (turkceNet * 1.19) + 
     (sosyalNet * 1.26) + 
@@ -146,7 +146,7 @@ const calculateEAHamPuan = (
   return base + tytKatkisi + aytKatkisi;
 };
 
-// SÖZ Ham Puan: 129.61 + TYT Katkısı + AYT Katkısı
+// SÖZ Ham Puan: 123.09 + TYT Katkısı + AYT Katkısı
 // TYT Katkısı: (TrNet * 1.13) + (SosNet * 1.19) + (MatNet * 1.31) + (FenNet * 1.01)
 // AYT Katkısı: (Edebiyat * 2.79) + (Tarih1 * 2.39) + (Cog1 * 2.70) + (Tarih2 * 3.80) + (Cog2 * 2.47) + (Felsefe * 3.76) + (Din * 2.36)
 const calculateSOZHamPuan = (
@@ -162,7 +162,7 @@ const calculateSOZHamPuan = (
   felsefeNet: number,
   dinNet: number
 ) => {
-  const base = 129.61;
+  const base = 123.09;
   const tytKatkisi = 
     (turkceNet * 1.13) + 
     (sosyalNet * 1.19) + 
@@ -533,7 +533,7 @@ export default function YksNetScreen() {
             </View>
           </View>
           <Text className="text-xs text-slate-500 mb-4 ml-0">
-            Başlangıç: 132.87
+            Başlangıç: 132.74
           </Text>
 
           <SectionRow
@@ -589,7 +589,7 @@ export default function YksNetScreen() {
             </View>
           </View>
           <Text className="text-xs text-slate-500 mb-4 ml-0">
-            Başlangıç: 129.34
+            Başlangıç: 122.44
           </Text>
 
           <SectionRow
@@ -645,7 +645,7 @@ export default function YksNetScreen() {
             </View>
           </View>
           <Text className="text-xs text-slate-500 mb-4 ml-0">
-            Başlangıç: 129.61
+            Başlangıç: 123.09
           </Text>
 
           <SectionRow

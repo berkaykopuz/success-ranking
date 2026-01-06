@@ -315,6 +315,89 @@ export const estimateRanking = (yerlesmePuani: number, scoreType: string): numbe
     if (yerlesmePuani <= 0) return null;
     if (!scoreType || scoreType.trim() === '') return null;
 
+    // Special handling for TYT: use Y-TYT (yerleştirme puanı, OBP dahil) band chart instead of JSON data
+    if (scoreType === 'TYT') {
+        // Optimized anchor points from latest 2025 Y-TYT band chart (puan → hedef/gerçek sıralama):
+        //  857      → 527.20   (Elit Zirve)
+        //  2.878    → 513.07   (Derece Grubu)
+        //  7.342    → 498.94   (Güvenli Liman)
+        // 31.241    → 466.14   (Kırılma 1)
+        // 73.211    → 437.87   (Yığılmanın ayak sesleri)
+        // 138.261   → 409.59   (Ortalama üstü rekabet)
+        // 619.647   → 321.67   (Orta Sınıf)
+        // 1.694.681 → 239.72   (Rekabetin bittiği yer)
+        // 1.892.918 → 225.88   (Baraj üstü son bölge)
+        const anchors: { puan: number; rank: number }[] = [
+            { puan: 527.20,   rank: 857 },       // Ref: 527,20 → 857 (Elit Zirve)
+            { puan: 513.07,   rank: 2_878 },     // Ref: 513,07 → 2.878 (Derece Grubu)
+            { puan: 498.94,   rank: 7_342 },     // Ref: 498,94 → 7.342 (Güvenli Liman)
+            { puan: 466.14,   rank: 31_241 },    // Ref: 466,14 → 31.241 (Kırılma 1)
+            { puan: 437.87,   rank: 73_211 },    // Ref: 437,87 → 73.211 (Yığılmanın ayak sesleri)
+            { puan: 409.59,   rank: 138_261 },   // Ref: 409,59 → 138.261 (Ortalama üstü rekabet)
+            { puan: 321.67,   rank: 619_647 },   // Ref: 321,67 → 619.647 (Orta Sınıf)
+            { puan: 239.72,   rank: 1_694_681 }, // Ref: 239,72 → 1.694.681 (Rekabetin bittiği yer)
+            { puan: 225.88,   rank: 1_892_918 }, // Ref: 225,88 → 1.892.918 (Baraj üstü son bölge)
+        ];
+
+        // Sort anchors by puan descending (higher score = better rank)
+        anchors.sort((a, b) => b.puan - a.puan);
+
+        const best = anchors[0];
+        const worst = anchors[anchors.length - 1];
+
+        // If score is higher than best anchor, extrapolate towards a better (lower) rank using the first segment
+        if (yerlesmePuani >= best.puan) {
+            const second = anchors[1];
+            const scoreRange = best.puan - second.puan;
+            const rankRange = second.rank - best.rank;
+            const extra = yerlesmePuani - best.puan;
+
+            if (scoreRange > 0) {
+                const slope = rankRange / scoreRange; // rank change per 1 puan
+                const est = best.rank + slope * (-extra); // higher puan → lower rank
+                return Math.max(1, Math.round(est));
+            }
+            return best.rank;
+        }
+
+        // If score is lower than worst anchor, extrapolate towards worse (higher) rank using last segment
+        if (yerlesmePuani <= worst.puan) {
+            const beforeWorst = anchors[anchors.length - 2];
+            const scoreRange = beforeWorst.puan - worst.puan;
+            const rankRange = worst.rank - beforeWorst.rank;
+            const extra = worst.puan - yerlesmePuani;
+
+            if (scoreRange > 0) {
+                const slope = rankRange / scoreRange; // rank change per 1 puan
+                const est = worst.rank + slope * (extra); // lower puan → higher rank
+                return Math.max(1, Math.round(est));
+            }
+            return worst.rank;
+        }
+
+        // Otherwise, find two neighboring anchors around the user's score and interpolate rank linearly
+        for (let i = 0; i < anchors.length - 1; i++) {
+            const upper = anchors[i];
+            const lower = anchors[i + 1];
+            if (yerlesmePuani <= upper.puan && yerlesmePuani >= lower.puan) {
+                const scoreRange = upper.puan - lower.puan;
+                const rankRange = lower.rank - upper.rank; // rank worsens as score decreases
+                const userDelta = upper.puan - yerlesmePuani;
+
+                if (scoreRange <= 0.0001) {
+                    return upper.rank;
+                }
+
+                const ratio = userDelta / scoreRange;
+                const est = upper.rank + rankRange * ratio;
+                return Math.max(1, Math.round(est));
+            }
+        }
+
+        // Fallback (should not hit often)
+        return null;
+    }
+
     const rawData = application as unknown as RawRankingItem[];
     
     // Filter programs by exact score_type match - this is critical for accurate ranking estimation
@@ -423,25 +506,15 @@ export const estimateRanking = (yerlesmePuani: number, scoreType: string): numbe
         }
     }
 
-    // If we only have a lower bound (user's score is very high), estimate based on score difference
-    if (closestLower) {
-        // Find the next program with lower taban_puan to estimate ranking trend
-        const programsWithLowerScore = relevantPrograms.filter(p => p.tabanPuan < closestLower!.tabanPuan);
-        if (programsWithLowerScore.length > 0) {
-            // Get the program with the highest score among those with lower scores
-            const nextLower = programsWithLowerScore.reduce((max, p) => p.tabanPuan > max.tabanPuan ? p : max);
-            const scoreDiff = closestLower.tabanPuan - nextLower.tabanPuan;
-            const rankDiff = closestLower.basariSirasi - nextLower.basariSirasi;
-            const userScoreDiff = yerlesmePuani - closestLower.tabanPuan;
-            
-            if (Math.abs(scoreDiff) > 0.001) {
-                // Extrapolate: user has higher score than closestLower, so better (lower) rank
-                // Higher score means lower rank, so we subtract
-                const estimatedRank = closestLower.basariSirasi - (rankDiff * (userScoreDiff / scoreDiff));
-                return Math.max(1, Math.round(estimatedRank));
-            }
-        }
-        return closestLower.basariSirasi;
+    // If we only have a lower bound (user's score is very high), cap at the best available rank
+    // This avoids over-optimistic extrapolation when there is no data beyond the highest taban_puan (e.g. TYT > 443)
+    if (closestLower && !closestHigher) {
+        // Best (minimum) basariSirasi among all programs for this scoreType
+        const bestProgram = relevantPrograms.reduce((best, p) =>
+            p.basariSirasi < best.basariSirasi ? p : best
+        , relevantPrograms[0]);
+
+        return bestProgram.basariSirasi;
     }
 
     // If we only have a higher bound (user's score is very low), estimate based on score difference
