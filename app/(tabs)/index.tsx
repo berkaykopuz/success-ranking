@@ -45,16 +45,15 @@ export default function RankingScreen() {
   ), [router]);
 
   const renderFooter = useCallback(() => {
-    return (
-      <View style={{ paddingBottom: insets.bottom + 40 }}>
-        {isFetchingNextPage && (
-          <View className="py-4">
-            <ActivityIndicator />
-          </View>
-        )}
-      </View>
-    );
-  }, [isFetchingNextPage, insets.bottom]);
+    if (isFetchingNextPage) {
+      return (
+        <View className="py-4">
+          <ActivityIndicator />
+        </View>
+      );
+    }
+    return null;
+  }, [isFetchingNextPage]);
 
   const renderEmpty = useCallback(() => {
     if (isLoading) return <ActivityIndicator className="mt-10" size="large" />;
@@ -77,6 +76,7 @@ export default function RankingScreen() {
           ListEmptyComponent={renderEmpty}
           refreshing={isLoading}
           onRefresh={refetch}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
         />
       </View>
     </View>

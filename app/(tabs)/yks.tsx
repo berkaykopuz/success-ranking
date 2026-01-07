@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ScrollView, Text, TextInput, View, TouchableOpacity, Modal, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserStore } from '../../src/store/userStore';
-import { Save } from 'lucide-react-native';
+import { Save, ChevronDown, ChevronUp } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { estimateRanking } from '../../src/api/rankings';
 
@@ -119,7 +119,7 @@ const calculateSAYHamPuan = (
   return base + tytKatkisi + aytKatkisi;
 };
 
-// EA Ham Puan: 122.44 + TYT Katkısı + AYT Katkısı
+// EA Ham Puan: 129.34 + TYT Katkısı + AYT Katkısı
 // TYT Katkısı: (TrNet * 1.19) + (SosNet * 1.26) + (MatNet * 1.38) + (FenNet * 1.07)
 // AYT Katkısı: (AYT Mat * 2.88) + (Edebiyat * 2.94) + (Tarih1 * 2.53) + (Cog1 * 2.85)
 const calculateEAHamPuan = (
@@ -132,7 +132,7 @@ const calculateEAHamPuan = (
   tarih1Net: number,
   cografya1Net: number
 ) => {
-  const base = 122.44;
+  const base = 129.34;
   const tytKatkisi = 
     (turkceNet * 1.19) + 
     (sosyalNet * 1.26) + 
@@ -146,7 +146,7 @@ const calculateEAHamPuan = (
   return base + tytKatkisi + aytKatkisi;
 };
 
-// SÖZ Ham Puan: 123.09 + TYT Katkısı + AYT Katkısı
+// SÖZ Ham Puan: 129.61 + TYT Katkısı + AYT Katkısı
 // TYT Katkısı: (TrNet * 1.13) + (SosNet * 1.19) + (MatNet * 1.31) + (FenNet * 1.01)
 // AYT Katkısı: (Edebiyat * 2.79) + (Tarih1 * 2.39) + (Cog1 * 2.70) + (Tarih2 * 3.80) + (Cog2 * 2.47) + (Felsefe * 3.76) + (Din * 2.36)
 const calculateSOZHamPuan = (
@@ -162,7 +162,7 @@ const calculateSOZHamPuan = (
   felsefeNet: number,
   dinNet: number
 ) => {
-  const base = 123.09;
+  const base = 129.61;
   const tytKatkisi = 
     (turkceNet * 1.13) + 
     (sosyalNet * 1.19) + 
@@ -205,6 +205,23 @@ export default function YksNetScreen() {
   const [kirikOBP, setKirikOBP] = useState(false);
   const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
   const [calculationName, setCalculationName] = useState('');
+
+  const [sectionsOpen, setSectionsOpen] = useState({
+    tyt: true,
+    say: true,
+    ea: true,
+    soz: true,
+    dil: true,
+    obp: true,
+    results: true,
+  });
+
+  const toggleSection = (key: keyof typeof sectionsOpen) => {
+    setSectionsOpen((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
 
   const handleTytChange = (key: TYTSectionKey, field: keyof NetInputs, text: string) => {
     let cleanedText = text.replace(/[^0-9,\.]/g, '');
@@ -439,6 +456,11 @@ export default function YksNetScreen() {
       eaYerlesme,
       sozYerlesme,
       dilYerlesme: dilYerlesme || 0,
+      tytEstimatedRank,
+      sayEstimatedRank,
+      eaEstimatedRank,
+      sozEstimatedRank,
+      dilEstimatedRank,
     });
 
     Alert.alert('Başarılı', 'Hesaplama kaydedildi!', [
@@ -465,282 +487,332 @@ export default function YksNetScreen() {
       >
         {/* TYT Card */}
         <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
-          <View className="flex-row items-center justify-between mb-2">
+          <TouchableOpacity
+            className="flex-row items-center justify-between mb-2"
+            activeOpacity={0.7}
+            onPress={() => toggleSection('tyt')}
+          >
             <View className="flex-row items-center">
               <View className="bg-blue-50 px-2.5 py-1 rounded-md mr-2">
                 <Text className="text-blue-700 font-bold text-[10px] tracking-wider uppercase">TYT</Text>
               </View>
-              <Text className="text-lg font-bold text-slate-800">Temel Yeterlilik Testi</Text>
+              <Text className="text-lg font-bold text-slate-800">Temel Yeterlilik </Text>
             </View>
-            <View className="items-end">
-              <Text className="text-[10px] text-slate-400 font-medium">120 soru • 165 dk</Text>
+            <View className="flex-row items-center">
+              <Text className="text-[10px] text-slate-400 font-medium mr-2">120 soru • 165 dk</Text>
+              {sectionsOpen.tyt ? (
+                <ChevronUp size={16} color="#64748b" />
+              ) : (
+                <ChevronDown size={16} color="#64748b" />
+              )}
             </View>
-          </View>
-          <Text className="text-xs text-slate-500 mb-4 ml-0">
-            Başlangıç: 145.20
-          </Text>
+          </TouchableOpacity>
 
-          <SectionRow
-            label="Türkçe"
-            help=""
-            value={tytValues.turkce}
-            onChangeCorrect={(t) => handleTytChange('turkce', 'correct', t)}
-            onChangeWrong={(t) => handleTytChange('turkce', 'wrong', t)}
-          />
-          <SectionRow
-            label="Sosyal Bilimler"
-            help=""
-            value={tytValues.sosyal}
-            onChangeCorrect={(t) => handleTytChange('sosyal', 'correct', t)}
-            onChangeWrong={(t) => handleTytChange('sosyal', 'wrong', t)}
-          />
-          <SectionRow
-            label="Temel Matematik"
-            help=""
-            value={tytValues.matematik}
-            onChangeCorrect={(t) => handleTytChange('matematik', 'correct', t)}
-            onChangeWrong={(t) => handleTytChange('matematik', 'wrong', t)}
-          />
-          <SectionRow
-            label="Fen Bilimleri"
-            help=""
-            value={tytValues.fen}
-            onChangeCorrect={(t) => handleTytChange('fen', 'correct', t)}
-            onChangeWrong={(t) => handleTytChange('fen', 'wrong', t)}
-          />
+          {sectionsOpen.tyt && (
+            <>
+              <SectionRow
+                label="Türkçe"
+                help=""
+                value={tytValues.turkce}
+                onChangeCorrect={(t) => handleTytChange('turkce', 'correct', t)}
+                onChangeWrong={(t) => handleTytChange('turkce', 'wrong', t)}
+              />
+              <SectionRow
+                label="Sosyal Bilimler"
+                help=""
+                value={tytValues.sosyal}
+                onChangeCorrect={(t) => handleTytChange('sosyal', 'correct', t)}
+                onChangeWrong={(t) => handleTytChange('sosyal', 'wrong', t)}
+              />
+              <SectionRow
+                label="Temel Matematik"
+                help=""
+                value={tytValues.matematik}
+                onChangeCorrect={(t) => handleTytChange('matematik', 'correct', t)}
+                onChangeWrong={(t) => handleTytChange('matematik', 'wrong', t)}
+              />
+              <SectionRow
+                label="Fen Bilimleri"
+                help=""
+                value={tytValues.fen}
+                onChangeCorrect={(t) => handleTytChange('fen', 'correct', t)}
+                onChangeWrong={(t) => handleTytChange('fen', 'wrong', t)}
+              />
 
-          <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam TYT Net</Text>
-              <Text className="text-lg font-bold text-blue-600 tracking-tight">
-                {tytTotalNet.toFixed(2).replace('.', ',')}
-              </Text>
-            </View>
-          </View>
+              <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam TYT Net</Text>
+                  <Text className="text-lg font-bold text-blue-600 tracking-tight">
+                    {tytTotalNet.toFixed(2).replace('.', ',')}
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         {/* AYT Sayısal Card */}
         <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
-          <View className="flex-row items-center justify-between mb-2">
+          <TouchableOpacity
+            className="flex-row items-center justify-between mb-2"
+            activeOpacity={0.7}
+            onPress={() => toggleSection('say')}
+          >
             <View className="flex-row items-center">
               <View className="bg-emerald-50 px-2.5 py-1 rounded-md mr-2">
                 <Text className="text-emerald-700 font-bold text-[10px] tracking-wider uppercase">SAY</Text>
               </View>
               <Text className="text-lg font-bold text-slate-800">Sayısal Alan</Text>
             </View>
-            <View className="items-end">
-              <Text className="text-[10px] text-slate-400 font-medium">80 soru • 180 dk</Text>
+            <View className="flex-row items-center">
+              <Text className="text-[10px] text-slate-400 font-medium mr-2">80 soru • 180 dk</Text>
+              {sectionsOpen.say ? (
+                <ChevronUp size={16} color="#64748b" />
+              ) : (
+                <ChevronDown size={16} color="#64748b" />
+              )}
             </View>
-          </View>
-          <Text className="text-xs text-slate-500 mb-4 ml-0">
-            Başlangıç: 132.74
-          </Text>
+          </TouchableOpacity>
 
-          <SectionRow
-            label="AYT Matematik"
-            help=""
-            value={aytValues.aytMatematik}
-            onChangeCorrect={(t) => handleAytChange('aytMatematik', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytMatematik', 'wrong', t)}
-          />
-          <SectionRow
-            label="Fizik"
-            help=""
-            value={aytValues.aytFizik}
-            onChangeCorrect={(t) => handleAytChange('aytFizik', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytFizik', 'wrong', t)}
-          />
-          <SectionRow
-            label="Kimya"
-            help=""
-            value={aytValues.aytKimya}
-            onChangeCorrect={(t) => handleAytChange('aytKimya', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytKimya', 'wrong', t)}
-          />
-          <SectionRow
-            label="Biyoloji"
-            help=""
-            value={aytValues.aytBiyoloji}
-            onChangeCorrect={(t) => handleAytChange('aytBiyoloji', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytBiyoloji', 'wrong', t)}
-          />
+          {sectionsOpen.say && (
+            <>
+              <SectionRow
+                label="AYT Matematik"
+                help=""
+                value={aytValues.aytMatematik}
+                onChangeCorrect={(t) => handleAytChange('aytMatematik', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytMatematik', 'wrong', t)}
+              />
+              <SectionRow
+                label="Fizik"
+                help=""
+                value={aytValues.aytFizik}
+                onChangeCorrect={(t) => handleAytChange('aytFizik', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytFizik', 'wrong', t)}
+              />
+              <SectionRow
+                label="Kimya"
+                help=""
+                value={aytValues.aytKimya}
+                onChangeCorrect={(t) => handleAytChange('aytKimya', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytKimya', 'wrong', t)}
+              />
+              <SectionRow
+                label="Biyoloji"
+                help=""
+                value={aytValues.aytBiyoloji}
+                onChangeCorrect={(t) => handleAytChange('aytBiyoloji', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytBiyoloji', 'wrong', t)}
+              />
 
-          <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam AYT Net</Text>
-              <Text className="text-lg font-bold text-emerald-600 tracking-tight">
-                {aytSayTotalNet.toFixed(2).replace('.', ',')}
-              </Text>
-            </View>
-          </View>
+              <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam AYT Net</Text>
+                  <Text className="text-lg font-bold text-emerald-600 tracking-tight">
+                    {aytSayTotalNet.toFixed(2).replace('.', ',')}
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         {/* AYT Eşit Ağırlık Card */}
         <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
-          <View className="flex-row items-center justify-between mb-2">
+          <TouchableOpacity
+            className="flex-row items-center justify-between mb-2"
+            activeOpacity={0.7}
+            onPress={() => toggleSection('ea')}
+          >
             <View className="flex-row items-center">
               <View className="bg-purple-50 px-2.5 py-1 rounded-md mr-2">
                 <Text className="text-purple-700 font-bold text-[10px] tracking-wider uppercase">EA</Text>
               </View>
               <Text className="text-lg font-bold text-slate-800">Eşit Ağırlık Alan</Text>
             </View>
-            <View className="items-end">
-              <Text className="text-[10px] text-slate-400 font-medium">80 soru • 180 dk</Text>
+            <View className="flex-row items-center">
+              <Text className="text-[10px] text-slate-400 font-medium mr-2">80 soru • 180 dk</Text>
+              {sectionsOpen.ea ? (
+                <ChevronUp size={16} color="#64748b" />
+              ) : (
+                <ChevronDown size={16} color="#64748b" />
+              )}
             </View>
-          </View>
-          <Text className="text-xs text-slate-500 mb-4 ml-0">
-            Başlangıç: 122.44
-          </Text>
+          </TouchableOpacity>
 
-          <SectionRow
-            label="AYT Matematik"
-            help=""
-            value={aytValues.aytMatematik}
-            onChangeCorrect={(t) => handleAytChange('aytMatematik', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytMatematik', 'wrong', t)}
-          />
-          <SectionRow
-            label="Edebiyat"
-            help=""
-            value={aytValues.aytEdebiyat}
-            onChangeCorrect={(t) => handleAytChange('aytEdebiyat', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytEdebiyat', 'wrong', t)}
-          />
-          <SectionRow
-            label="Tarih-1"
-            help=""
-            value={aytValues.aytTarih1}
-            onChangeCorrect={(t) => handleAytChange('aytTarih1', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytTarih1', 'wrong', t)}
-          />
-          <SectionRow
-            label="Coğrafya-1"
-            help=""
-            value={aytValues.aytCografya1}
-            onChangeCorrect={(t) => handleAytChange('aytCografya1', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytCografya1', 'wrong', t)}
-          />
+          {sectionsOpen.ea && (
+            <>
+              <SectionRow
+                label="AYT Matematik"
+                help=""
+                value={aytValues.aytMatematik}
+                onChangeCorrect={(t) => handleAytChange('aytMatematik', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytMatematik', 'wrong', t)}
+              />
+              <SectionRow
+                label="Edebiyat"
+                help=""
+                value={aytValues.aytEdebiyat}
+                onChangeCorrect={(t) => handleAytChange('aytEdebiyat', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytEdebiyat', 'wrong', t)}
+              />
+              <SectionRow
+                label="Tarih-1"
+                help=""
+                value={aytValues.aytTarih1}
+                onChangeCorrect={(t) => handleAytChange('aytTarih1', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytTarih1', 'wrong', t)}
+              />
+              <SectionRow
+                label="Coğrafya-1"
+                help=""
+                value={aytValues.aytCografya1}
+                onChangeCorrect={(t) => handleAytChange('aytCografya1', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytCografya1', 'wrong', t)}
+              />
 
-          <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam AYT Net</Text>
-              <Text className="text-lg font-bold text-purple-600 tracking-tight">
-                {aytEaTotalNet.toFixed(2).replace('.', ',')}
-              </Text>
-            </View>
-          </View>
+              <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam AYT Net</Text>
+                  <Text className="text-lg font-bold text-purple-600 tracking-tight">
+                    {aytEaTotalNet.toFixed(2).replace('.', ',')}
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         {/* AYT Sözel Card */}
         <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
-          <View className="flex-row items-center justify-between mb-2">
+          <TouchableOpacity
+            className="flex-row items-center justify-between mb-2"
+            activeOpacity={0.7}
+            onPress={() => toggleSection('soz')}
+          >
             <View className="flex-row items-center">
               <View className="bg-orange-50 px-2.5 py-1 rounded-md mr-2">
                 <Text className="text-orange-700 font-bold text-[10px] tracking-wider uppercase">SÖZ</Text>
               </View>
               <Text className="text-lg font-bold text-slate-800">Sözel Alan</Text>
             </View>
-            <View className="items-end">
-              <Text className="text-[10px] text-slate-400 font-medium">80 soru • 180 dk</Text>
+            <View className="flex-row items-center">
+              <Text className="text-[10px] text-slate-400 font-medium mr-2">80 soru • 180 dk</Text>
+              {sectionsOpen.soz ? (
+                <ChevronUp size={16} color="#64748b" />
+              ) : (
+                <ChevronDown size={16} color="#64748b" />
+              )}
             </View>
-          </View>
-          <Text className="text-xs text-slate-500 mb-4 ml-0">
-            Başlangıç: 123.09
-          </Text>
+          </TouchableOpacity>
 
-          <SectionRow
-            label="Edebiyat"
-            help=""
-            value={aytValues.aytEdebiyat}
-            onChangeCorrect={(t) => handleAytChange('aytEdebiyat', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytEdebiyat', 'wrong', t)}
-          />
-          <SectionRow
-            label="Tarih-1"
-            help=""
-            value={aytValues.aytTarih1}
-            onChangeCorrect={(t) => handleAytChange('aytTarih1', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytTarih1', 'wrong', t)}
-          />
-          <SectionRow
-            label="Coğrafya-1"
-            help=""
-            value={aytValues.aytCografya1}
-            onChangeCorrect={(t) => handleAytChange('aytCografya1', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytCografya1', 'wrong', t)}
-          />
-          <SectionRow
-            label="Tarih-2"
-            help=""
-            value={aytValues.aytTarih2}
-            onChangeCorrect={(t) => handleAytChange('aytTarih2', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytTarih2', 'wrong', t)}
-          />
-          <SectionRow
-            label="Coğrafya-2"
-            help=""
-            value={aytValues.aytCografya2}
-            onChangeCorrect={(t) => handleAytChange('aytCografya2', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytCografya2', 'wrong', t)}
-          />
-          <SectionRow
-            label="Felsefe Grubu"
-            help=""
-            value={aytValues.aytFelsefe}
-            onChangeCorrect={(t) => handleAytChange('aytFelsefe', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytFelsefe', 'wrong', t)}
-          />
-          <SectionRow
-            label="Din Kültürü / İlave Felsefe"
-            help=""
-            value={aytValues.aytDin}
-            onChangeCorrect={(t) => handleAytChange('aytDin', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytDin', 'wrong', t)}
-          />
+          {sectionsOpen.soz && (
+            <>
+              <SectionRow
+                label="Edebiyat"
+                help=""
+                value={aytValues.aytEdebiyat}
+                onChangeCorrect={(t) => handleAytChange('aytEdebiyat', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytEdebiyat', 'wrong', t)}
+              />
+              <SectionRow
+                label="Tarih-1"
+                help=""
+                value={aytValues.aytTarih1}
+                onChangeCorrect={(t) => handleAytChange('aytTarih1', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytTarih1', 'wrong', t)}
+              />
+              <SectionRow
+                label="Coğrafya-1"
+                help=""
+                value={aytValues.aytCografya1}
+                onChangeCorrect={(t) => handleAytChange('aytCografya1', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytCografya1', 'wrong', t)}
+              />
+              <SectionRow
+                label="Tarih-2"
+                help=""
+                value={aytValues.aytTarih2}
+                onChangeCorrect={(t) => handleAytChange('aytTarih2', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytTarih2', 'wrong', t)}
+              />
+              <SectionRow
+                label="Coğrafya-2"
+                help=""
+                value={aytValues.aytCografya2}
+                onChangeCorrect={(t) => handleAytChange('aytCografya2', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytCografya2', 'wrong', t)}
+              />
+              <SectionRow
+                label="Felsefe Grubu"
+                help=""
+                value={aytValues.aytFelsefe}
+                onChangeCorrect={(t) => handleAytChange('aytFelsefe', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytFelsefe', 'wrong', t)}
+              />
+              <SectionRow
+                label="Din Kültürü / İlave Felsefe"
+                help=""
+                value={aytValues.aytDin}
+                onChangeCorrect={(t) => handleAytChange('aytDin', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytDin', 'wrong', t)}
+              />
 
-          <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam AYT Net</Text>
-              <Text className="text-lg font-bold text-orange-600 tracking-tight">
-                {aytSozTotalNet.toFixed(2).replace('.', ',')}
-              </Text>
-            </View>
-          </View>
+              <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam AYT Net</Text>
+                  <Text className="text-lg font-bold text-orange-600 tracking-tight">
+                    {aytSozTotalNet.toFixed(2).replace('.', ',')}
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         {/* AYT Dil Card */}
         <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
-          <View className="flex-row items-center justify-between mb-2">
+          <TouchableOpacity
+            className="flex-row items-center justify-between mb-2"
+            activeOpacity={0.7}
+            onPress={() => toggleSection('dil')}
+          >
             <View className="flex-row items-center">
               <View className="bg-rose-50 px-2.5 py-1 rounded-md mr-2">
                 <Text className="text-rose-700 font-bold text-[10px] tracking-wider uppercase">DİL</Text>
               </View>
               <Text className="text-lg font-bold text-slate-800">Yabancı Dil Alan</Text>
             </View>
-            <View className="items-end">
-              <Text className="text-[10px] text-slate-400 font-medium">80 soru • 120 dk</Text>
+            <View className="flex-row items-center">
+              <Text className="text-[10px] text-slate-400 font-medium mr-2">80 soru • 120 dk</Text>
+              {sectionsOpen.dil ? (
+                <ChevronUp size={16} color="#64748b" />
+              ) : (
+                <ChevronDown size={16} color="#64748b" />
+              )}
             </View>
-          </View>
-          <Text className="text-xs text-slate-500 mb-4 ml-0">
-            Başlangıç: 105.92
-          </Text>
+          </TouchableOpacity>
 
-          <SectionRow
-            label="YDT (Yabancı Dil Testi)"
-            help=""
-            value={aytValues.aytYdt}
-            onChangeCorrect={(t) => handleAytChange('aytYdt', 'correct', t)}
-            onChangeWrong={(t) => handleAytChange('aytYdt', 'wrong', t)}
-          />
+          {sectionsOpen.dil && (
+            <>
+              <SectionRow
+                label="YDT (Yabancı Dil Testi)"
+                help=""
+                value={aytValues.aytYdt}
+                onChangeCorrect={(t) => handleAytChange('aytYdt', 'correct', t)}
+                onChangeWrong={(t) => handleAytChange('aytYdt', 'wrong', t)}
+              />
 
-          <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">YDT Net</Text>
-              <Text className="text-lg font-bold text-rose-600 tracking-tight">
-                {aytYdtNet.toFixed(2).replace('.', ',')}
-              </Text>
-            </View>
-          </View>
+              <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">YDT Net</Text>
+                  <Text className="text-lg font-bold text-rose-600 tracking-tight">
+                    {aytYdtNet.toFixed(2).replace('.', ',')}
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         {/* OBP Input Card */}
@@ -879,37 +951,6 @@ export default function YksNetScreen() {
             </View>
           </View>
 
-          {/* SÖZ Results */}
-          <View className="mb-4">
-            <Text className="text-sm font-bold text-slate-800 mb-2">SÖZ (Sözel) Puanı</Text>
-            <View className="bg-orange-50 px-3 py-2 rounded-xl border border-orange-200">
-              <View className="flex-row items-center justify-between mb-1">
-                <Text className="text-xs text-orange-600 font-medium">Ham Puan</Text>
-                <Text className="text-base font-bold text-orange-700">
-                  {passesBaraj && (aytEdebiyatNet > 0 || aytTarih1Net > 0 || aytCografya1Net > 0)
-                    ? sozHamPuan.toFixed(3).replace('.', ',')
-                    : '—'}
-                </Text>
-              </View>
-              {diplomaNotu > 0 && (
-                <View className="flex-row items-center justify-between pt-1 border-t border-orange-200">
-                  <Text className="text-xs text-orange-600 font-medium">Yerleştirme Puanı</Text>
-                  <Text className="text-base font-bold text-orange-700">
-                    {sozYerlesme.toFixed(3).replace('.', ',')}
-                  </Text>
-                </View>
-              )}
-              {sozEstimatedRank !== null && (
-                <View className="flex-row items-center justify-between pt-1 border-t border-orange-200">
-                  <Text className="text-xs text-orange-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
-                  <Text className="text-base font-bold text-orange-700">
-                    {sozEstimatedRank.toLocaleString('tr-TR')}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-
           {/* EA Results */}
           <View className="mb-4">
             <Text className="text-sm font-bold text-slate-800 mb-2">EA (Eşit Ağırlık) Puanı</Text>
@@ -935,6 +976,37 @@ export default function YksNetScreen() {
                   <Text className="text-xs text-purple-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
                   <Text className="text-base font-bold text-purple-700">
                     {eaEstimatedRank.toLocaleString('tr-TR')}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* SÖZ Results */}
+          <View className="mb-4">
+            <Text className="text-sm font-bold text-slate-800 mb-2">SÖZ (Sözel) Puanı</Text>
+            <View className="bg-orange-50 px-3 py-2 rounded-xl border border-orange-200">
+              <View className="flex-row items-center justify-between mb-1">
+                <Text className="text-xs text-orange-600 font-medium">Ham Puan</Text>
+                <Text className="text-base font-bold text-orange-700">
+                  {passesBaraj && (aytEdebiyatNet > 0 || aytTarih1Net > 0 || aytCografya1Net > 0)
+                    ? sozHamPuan.toFixed(3).replace('.', ',')
+                    : '—'}
+                </Text>
+              </View>
+              {diplomaNotu > 0 && (
+                <View className="flex-row items-center justify-between pt-1 border-t border-orange-200">
+                  <Text className="text-xs text-orange-600 font-medium">Yerleştirme Puanı</Text>
+                  <Text className="text-base font-bold text-orange-700">
+                    {sozYerlesme.toFixed(3).replace('.', ',')}
+                  </Text>
+                </View>
+              )}
+              {sozEstimatedRank !== null && (
+                <View className="flex-row items-center justify-between pt-1 border-t border-orange-200">
+                  <Text className="text-xs text-orange-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                  <Text className="text-base font-bold text-orange-700">
+                    {sozEstimatedRank.toLocaleString('tr-TR')}
                   </Text>
                 </View>
               )}
@@ -974,7 +1046,7 @@ export default function YksNetScreen() {
 
           <View className="mt-4 pt-3 border-t border-slate-200">
             <Text className="text-[10px] text-slate-400 text-center leading-relaxed">
-              ⚠️ TYT puanının hesaplanması için Türkçe veya Matematik&apos;ten en az 0,5 net gerekir.
+              ⚠️ Hesaplamalar tahmini olup, kesin sonuçlar için ÖSYM değerlendirmesine dikkat etmek gerekmektedir.
             </Text>
           </View>
         </View>
@@ -1049,7 +1121,7 @@ function SectionRow({ label, help, value, onChangeCorrect, onChangeWrong }: Sect
   const net = getNet(value);
 
   return (
-    <View className="mb-3 pb-3 border-b border-slate-100 last:border-b-0 last:pb-0 last:mb-0">
+    <View className="mb-3 py-3 border-b border-slate-100 last:border-b-0 last:pb-0 last:mb-0">
       <View className="flex-row items-center justify-between mb-2">
         <Text className="text-sm font-medium text-slate-800">{label}</Text>
         {help && (

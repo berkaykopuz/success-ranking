@@ -8,6 +8,7 @@ export interface RankingItem {
     score: number;
     rank: number | null;
     quota: number;
+    yerlesen: number;
     city: string;
     language: string | null;
     quotaType: string | null;

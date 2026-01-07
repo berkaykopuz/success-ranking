@@ -50,6 +50,7 @@ const processedData: RankingItem[] = (application as unknown as RawRankingItem[]
             score: latestYearData.taban_puan,
             rank: latestYearData.basari_sirasi, // Use basari_sirasi from the year data
             quota: latestYearData.kontenjan,
+            yerlesen: latestYearData.yerlesen,
             city: item.location_city,
             language: item.language || null,
             quotaType: item.quota_type || null,
@@ -105,6 +106,7 @@ export const fetchRankings = async (
                     score: yearData.taban_puan,
                     rank: yearData.basari_sirasi, // Use basari_sirasi from the year data
                     quota: yearData.kontenjan,
+                    yerlesen: yearData.yerlesen,
                     city: item.location_city,
                     language: item.language || null,
                     quotaType: item.quota_type || null,

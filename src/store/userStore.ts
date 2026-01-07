@@ -28,6 +28,11 @@ export interface YKSCalculation {
     eaYerlesme: number;
     sozYerlesme: number;
     dilYerlesme?: number;
+    tytEstimatedRank?: number | null;
+    sayEstimatedRank?: number | null;
+    eaEstimatedRank?: number | null;
+    sozEstimatedRank?: number | null;
+    dilEstimatedRank?: number | null;
     createdAt: number;
 }
 
@@ -51,6 +56,7 @@ interface UserState {
     getFavorites: () => RankingItem[];
     // YKS Calculations
     saveYKSCalculation: (calculation: Omit<YKSCalculation, 'id' | 'createdAt'>) => void;
+    updateYKSCalculation: (id: string, calculation: Partial<Omit<YKSCalculation, 'id' | 'createdAt'>>) => void;
     deleteYKSCalculation: (id: string) => void;
     getYKSCalculations: () => YKSCalculation[];
 }
@@ -210,6 +216,14 @@ export const useUserStore = create<UserState>()(
                 };
                 set((state) => ({
                     yksCalculations: [newCalculation, ...state.yksCalculations],
+                }));
+            },
+
+            updateYKSCalculation: (id, calculation) => {
+                set((state) => ({
+                    yksCalculations: state.yksCalculations.map((calc) =>
+                        calc.id === id ? { ...calc, ...calculation } : calc
+                    ),
                 }));
             },
 

@@ -155,12 +155,15 @@ export const FilterBar = () => {
                                 <TouchableOpacity
                                     key={sub}
                                     onPress={() => handleSubCategoryPress(sub)}
-                                    className={`px-6 py-3.5 rounded-full ${
+                                    className={`py-3.5 rounded-full ${
                                         isSelected
                                             ? 'bg-blue-600'
                                             : 'bg-white'
                                     }`}
                                     style={{
+                                        width: 90,
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                         shadowColor: isSelected ? '#3b82f6' : '#000',
                                         shadowOffset: { width: 0, height: 1 },
                                         shadowOpacity: isSelected ? 0.15 : 0.05,
@@ -172,6 +175,7 @@ export const FilterBar = () => {
                                         className={`text-sm font-semibold ${
                                             isSelected ? 'text-white' : 'text-slate-700'
                                         }`}
+                                        numberOfLines={1}
                                     >
                                         {sub}
                                     </Text>

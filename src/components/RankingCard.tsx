@@ -77,7 +77,7 @@ export const RankingCard = React.memo(({ item, router }: Props) => {
 
                 <View className="items-end">
                     <Text className="text-[10px] text-slate-400 font-bold mb-0.5">Başarı Sıralaması</Text>
-                    <Text className="text-lg font-bold text-blue-600 tracking-tight">
+                    <Text className="text-lg font-bold text-blue-600 tracking-tight text-right">
                         {item.rank !== null ? item.rank.toLocaleString('tr-TR') : 'N/A'}
                     </Text>
                 </View>
@@ -96,7 +96,7 @@ export const RankingCard = React.memo(({ item, router }: Props) => {
                         elevation: 3,
                     }}
                 >
-                    <Plus size={6} color="#475569" strokeWidth={2.5} />
+                    <Plus size={8} color="#475569" strokeWidth={2.5} />
                 </TouchableOpacity>
             </View>
 
@@ -107,7 +107,7 @@ export const RankingCard = React.memo(({ item, router }: Props) => {
                 </View>
                 <View className="items-center flex-1">
                     <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">Kontenjan</Text>
-                    <Text className="text-sm font-semibold text-slate-700">{item.quota}</Text>
+                    <Text className="text-sm font-semibold text-slate-700">{item.yerlesen}</Text>
                 </View>
                 <View className="items-center flex-1 border-l border-slate-200">
                     <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">Puan</Text>

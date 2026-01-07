@@ -19,9 +19,10 @@ export default function TabLayout() {
       tabBar={(props) => (
         <View
           style={{
-            backgroundColor: isDark ? '#151718' : '#ffffff',
+            // Always use the dark theme tab bar background for a consistent, premium look
+            backgroundColor: '#151718',
             borderTopWidth: 1,
-            borderTopColor: isDark ? '#2a2d2e' : '#e5e7eb',
+            borderTopColor: '#2a2d2e',
             elevation: 8,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: -2 },
@@ -33,8 +34,9 @@ export default function TabLayout() {
         </View>
       )}
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        tabBarInactiveTintColor: isDark ? '#9BA1A6' : '#687076',
+        // Use white as the primary icon/label color to match the dark tab bar
+        tabBarActiveTintColor: '#ffffff',
+        tabBarInactiveTintColor: '#cbd5e1',
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarLabelStyle: {

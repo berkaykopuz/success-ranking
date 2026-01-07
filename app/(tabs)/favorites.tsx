@@ -1,6 +1,6 @@
 import { FlashList } from '@shopify/flash-list';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
-import { Folder, Plus, ChevronRight, Trash2, Edit2, History, List, ArrowLeft, GripVertical, BarChart3 } from 'lucide-react-native';
+import { Folder, Plus, ChevronRight, Trash2, Edit2, History, List, ArrowLeft, GripVertical, BarChart3, Save, X } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
     Text,
@@ -19,6 +19,7 @@ import { RankingCard } from '../../src/components/RankingCard';
 import { useUserStore, PersonalList, YKSCalculation } from '../../src/store/userStore';
 import { RankingItem } from '../../src/types/ranking';
 import { useRouter } from 'expo-router';
+import { estimateRanking } from '../../src/api/rankings';
 
 type ViewMode = 'main' | 'lists' | 'listDetail' | 'pastScores' | 'calculationDetail' | 'netFormStatus';
 
@@ -34,6 +35,7 @@ export default function KisiselScreen() {
         reorderListItems,
         getYKSCalculations,
         deleteYKSCalculation,
+        updateYKSCalculation,
     } = useUserStore();
 
     const [viewMode, setViewMode] = useState<ViewMode>('main');
@@ -43,6 +45,19 @@ export default function KisiselScreen() {
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [newListName, setNewListName] = useState('');
     const [editListName, setEditListName] = useState('');
+    const [isEditingTYT, setIsEditingTYT] = useState(false);
+    const [editedTYTValues, setEditedTYTValues] = useState<Record<string, { correct: string; wrong: string }>>({});
+    const [isEditingSAY, setIsEditingSAY] = useState(false);
+    const [editedSAYValues, setEditedSAYValues] = useState<Record<string, { correct: string; wrong: string }>>({});
+    const [isEditingEA, setIsEditingEA] = useState(false);
+    const [editedEAValues, setEditedEAValues] = useState<Record<string, { correct: string; wrong: string }>>({});
+    const [isEditingSOZ, setIsEditingSOZ] = useState(false);
+    const [editedSOZValues, setEditedSOZValues] = useState<Record<string, { correct: string; wrong: string }>>({});
+    const [isEditingDIL, setIsEditingDIL] = useState(false);
+    const [editedDILValues, setEditedDILValues] = useState<Record<string, { correct: string; wrong: string }>>({});
+    const [isEditingOBP, setIsEditingOBP] = useState(false);
+    const [editedDiplomaGrade, setEditedDiplomaGrade] = useState('');
+    const [editedKirikOBP, setEditedKirikOBP] = useState(false);
 
     // Filter out the default favorites list from user-created lists
     const userLists = lists.filter((list) => list.id !== 'favorites');
@@ -243,10 +258,10 @@ export default function KisiselScreen() {
                 <Folder size={48} color="#94a3b8" />
             </View>
             <Text className="text-xl font-bold text-slate-800 mb-3">
-                Liste boş
+                Listeye Henüz Bölüm Eklenmedi
             </Text>
             <Text className="text-slate-500 text-center text-base leading-relaxed max-w-[280px]">
-                Bu listeye henüz bölüm eklenmedi.
+                Keşfet ekranındaki bölüm kartlarında yer alan "+" simgesine basarak listeye ekleyebilirsiniz.
             </Text>
         </View>
     );
@@ -281,12 +296,354 @@ export default function KisiselScreen() {
         Haptics.selectionAsync();
         setSelectedCalculation(calculation);
         setViewMode('calculationDetail');
+        setIsEditingTYT(false);
+        setEditedTYTValues({});
+        setIsEditingSAY(false);
+        setEditedSAYValues({});
+        setIsEditingEA(false);
+        setEditedEAValues({});
+        setIsEditingSOZ(false);
+        setEditedSOZValues({});
+        setIsEditingDIL(false);
+        setEditedDILValues({});
+        setIsEditingOBP(false);
+        setEditedDiplomaGrade('');
+        setEditedKirikOBP(false);
     };
 
     const handleBackToPastScores = () => {
         Haptics.selectionAsync();
         setViewMode('pastScores');
         setSelectedCalculation(null);
+        setIsEditingTYT(false);
+        setEditedTYTValues({});
+        setIsEditingSAY(false);
+        setEditedSAYValues({});
+        setIsEditingEA(false);
+        setEditedEAValues({});
+        setIsEditingSOZ(false);
+        setEditedSOZValues({});
+        setIsEditingDIL(false);
+        setEditedDILValues({});
+        setIsEditingOBP(false);
+        setEditedDiplomaGrade('');
+        setEditedKirikOBP(false);
+    };
+
+    const handleStartEditingTYT = () => {
+        if (!selectedCalculation) return;
+        Haptics.selectionAsync();
+        setEditedTYTValues({ ...selectedCalculation.tytValues });
+        setIsEditingTYT(true);
+    };
+
+    const handleCancelEditingTYT = () => {
+        Haptics.selectionAsync();
+        setIsEditingTYT(false);
+        setEditedTYTValues({});
+    };
+
+    const handleSaveTYT = () => {
+        if (!selectedCalculation) return;
+
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        // Merge edited values with original to ensure all fields are present
+        const finalTYTValues = {
+            ...selectedCalculation.tytValues,
+            ...editedTYTValues,
+        };
+
+        // Recalculate all scores
+        const recalculated = recalculateAllScores(
+            finalTYTValues,
+            selectedCalculation.aytValues,
+            selectedCalculation.diplomaGrade,
+            selectedCalculation.kirikOBP
+        );
+
+        // Update calculation
+        updateYKSCalculation(selectedCalculation.id, {
+            tytValues: finalTYTValues,
+            ...recalculated,
+        });
+
+        // Update selected calculation to reflect changes
+        const updatedCalculation = {
+            ...selectedCalculation,
+            tytValues: finalTYTValues,
+            ...recalculated,
+        };
+        setSelectedCalculation(updatedCalculation);
+        setIsEditingTYT(false);
+        setEditedTYTValues({});
+
+        Alert.alert('Başarılı', 'TYT değerleri güncellendi!');
+    };
+
+    // SAY (Sayısal) handlers
+    const handleStartEditingSAY = () => {
+        if (!selectedCalculation) return;
+        Haptics.selectionAsync();
+        setEditedSAYValues({
+            aytMatematik: selectedCalculation.aytValues.aytMatematik,
+            aytFizik: selectedCalculation.aytValues.aytFizik,
+            aytKimya: selectedCalculation.aytValues.aytKimya,
+            aytBiyoloji: selectedCalculation.aytValues.aytBiyoloji,
+        });
+        setIsEditingSAY(true);
+    };
+
+    const handleCancelEditingSAY = () => {
+        Haptics.selectionAsync();
+        setIsEditingSAY(false);
+        setEditedSAYValues({});
+    };
+
+    const handleSaveSAY = () => {
+        if (!selectedCalculation) return;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        const finalAYTValues = {
+            ...selectedCalculation.aytValues,
+            ...editedSAYValues,
+        };
+
+        const recalculated = recalculateAllScores(
+            selectedCalculation.tytValues,
+            finalAYTValues,
+            selectedCalculation.diplomaGrade,
+            selectedCalculation.kirikOBP
+        );
+
+        updateYKSCalculation(selectedCalculation.id, {
+            aytValues: finalAYTValues,
+            ...recalculated,
+        });
+
+        const updatedCalculation = {
+            ...selectedCalculation,
+            aytValues: finalAYTValues,
+            ...recalculated,
+        };
+        setSelectedCalculation(updatedCalculation);
+        setIsEditingSAY(false);
+        setEditedSAYValues({});
+
+        Alert.alert('Başarılı', 'SAY değerleri güncellendi!');
+    };
+
+    // EA (Eşit Ağırlık) handlers
+    const handleStartEditingEA = () => {
+        if (!selectedCalculation) return;
+        Haptics.selectionAsync();
+        setEditedEAValues({
+            aytMatematik: selectedCalculation.aytValues.aytMatematik,
+            aytEdebiyat: selectedCalculation.aytValues.aytEdebiyat,
+            aytTarih1: selectedCalculation.aytValues.aytTarih1,
+            aytCografya1: selectedCalculation.aytValues.aytCografya1,
+        });
+        setIsEditingEA(true);
+    };
+
+    const handleCancelEditingEA = () => {
+        Haptics.selectionAsync();
+        setIsEditingEA(false);
+        setEditedEAValues({});
+    };
+
+    const handleSaveEA = () => {
+        if (!selectedCalculation) return;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        const finalAYTValues = {
+            ...selectedCalculation.aytValues,
+            ...editedEAValues,
+        };
+
+        const recalculated = recalculateAllScores(
+            selectedCalculation.tytValues,
+            finalAYTValues,
+            selectedCalculation.diplomaGrade,
+            selectedCalculation.kirikOBP
+        );
+
+        updateYKSCalculation(selectedCalculation.id, {
+            aytValues: finalAYTValues,
+            ...recalculated,
+        });
+
+        const updatedCalculation = {
+            ...selectedCalculation,
+            aytValues: finalAYTValues,
+            ...recalculated,
+        };
+        setSelectedCalculation(updatedCalculation);
+        setIsEditingEA(false);
+        setEditedEAValues({});
+
+        Alert.alert('Başarılı', 'EA değerleri güncellendi!');
+    };
+
+    // SÖZ (Sözel) handlers
+    const handleStartEditingSOZ = () => {
+        if (!selectedCalculation) return;
+        Haptics.selectionAsync();
+        setEditedSOZValues({
+            aytEdebiyat: selectedCalculation.aytValues.aytEdebiyat,
+            aytTarih1: selectedCalculation.aytValues.aytTarih1,
+            aytCografya1: selectedCalculation.aytValues.aytCografya1,
+            aytTarih2: selectedCalculation.aytValues.aytTarih2,
+            aytCografya2: selectedCalculation.aytValues.aytCografya2,
+            aytFelsefe: selectedCalculation.aytValues.aytFelsefe,
+            aytDin: selectedCalculation.aytValues.aytDin,
+        });
+        setIsEditingSOZ(true);
+    };
+
+    const handleCancelEditingSOZ = () => {
+        Haptics.selectionAsync();
+        setIsEditingSOZ(false);
+        setEditedSOZValues({});
+    };
+
+    const handleSaveSOZ = () => {
+        if (!selectedCalculation) return;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        const finalAYTValues = {
+            ...selectedCalculation.aytValues,
+            ...editedSOZValues,
+        };
+
+        const recalculated = recalculateAllScores(
+            selectedCalculation.tytValues,
+            finalAYTValues,
+            selectedCalculation.diplomaGrade,
+            selectedCalculation.kirikOBP
+        );
+
+        updateYKSCalculation(selectedCalculation.id, {
+            aytValues: finalAYTValues,
+            ...recalculated,
+        });
+
+        const updatedCalculation = {
+            ...selectedCalculation,
+            aytValues: finalAYTValues,
+            ...recalculated,
+        };
+        setSelectedCalculation(updatedCalculation);
+        setIsEditingSOZ(false);
+        setEditedSOZValues({});
+
+        Alert.alert('Başarılı', 'SÖZ değerleri güncellendi!');
+    };
+
+    // DİL (Yabancı Dil) handlers
+    const handleStartEditingDIL = () => {
+        if (!selectedCalculation) return;
+        Haptics.selectionAsync();
+        if (selectedCalculation.aytValues.aytYdt) {
+            setEditedDILValues({
+                aytYdt: selectedCalculation.aytValues.aytYdt,
+            });
+        }
+        setIsEditingDIL(true);
+    };
+
+    const handleCancelEditingDIL = () => {
+        Haptics.selectionAsync();
+        setIsEditingDIL(false);
+        setEditedDILValues({});
+    };
+
+    const handleSaveDIL = () => {
+        if (!selectedCalculation) return;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        const finalAYTValues = {
+            ...selectedCalculation.aytValues,
+            ...editedDILValues,
+        };
+
+        const recalculated = recalculateAllScores(
+            selectedCalculation.tytValues,
+            finalAYTValues,
+            selectedCalculation.diplomaGrade,
+            selectedCalculation.kirikOBP
+        );
+
+        updateYKSCalculation(selectedCalculation.id, {
+            aytValues: finalAYTValues,
+            ...recalculated,
+        });
+
+        const updatedCalculation = {
+            ...selectedCalculation,
+            aytValues: finalAYTValues,
+            ...recalculated,
+        };
+        setSelectedCalculation(updatedCalculation);
+        setIsEditingDIL(false);
+        setEditedDILValues({});
+
+        Alert.alert('Başarılı', 'DİL değerleri güncellendi!');
+    };
+
+    // OBP handlers
+    const handleStartEditingOBP = () => {
+        if (!selectedCalculation) return;
+        Haptics.selectionAsync();
+        setEditedDiplomaGrade(selectedCalculation.diplomaGrade || '');
+        setEditedKirikOBP(selectedCalculation.kirikOBP || false);
+        setIsEditingOBP(true);
+    };
+
+    const handleCancelEditingOBP = () => {
+        Haptics.selectionAsync();
+        setIsEditingOBP(false);
+        setEditedDiplomaGrade('');
+        setEditedKirikOBP(false);
+    };
+
+    const handleDiplomaGradeChange = (text: string) => {
+        const cleaned = text.replace(/[^0-9,\.]/g, '');
+        const num = parseFloat(cleaned.replace(',', '.')) || 0;
+        if (num <= 100) {
+            setEditedDiplomaGrade(cleaned);
+        }
+    };
+
+    const handleSaveOBP = () => {
+        if (!selectedCalculation) return;
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        const recalculated = recalculateAllScores(
+            selectedCalculation.tytValues,
+            selectedCalculation.aytValues,
+            editedDiplomaGrade || selectedCalculation.diplomaGrade,
+            editedKirikOBP
+        );
+
+        updateYKSCalculation(selectedCalculation.id, {
+            diplomaGrade: editedDiplomaGrade || selectedCalculation.diplomaGrade,
+            kirikOBP: editedKirikOBP,
+            ...recalculated,
+        });
+
+        const updatedCalculation = {
+            ...selectedCalculation,
+            diplomaGrade: editedDiplomaGrade || selectedCalculation.diplomaGrade,
+            kirikOBP: editedKirikOBP,
+            ...recalculated,
+        };
+        setSelectedCalculation(updatedCalculation);
+        setIsEditingOBP(false);
+        setEditedDiplomaGrade('');
+        setEditedKirikOBP(false);
+
+        Alert.alert('Başarılı', 'OBP değerleri güncellendi!');
     };
 
     const renderYKSCalculation = useCallback(
@@ -376,7 +733,7 @@ export default function KisiselScreen() {
                             <History size={48} color="#94a3b8" />
                         </View>
                         <Text className="text-xl font-bold text-slate-800 mb-3">
-                            Henüz net kaydedilmedi
+                            Henüz Net Kaydedilmedi
                         </Text>
                         <Text className="text-slate-500 text-center text-base leading-relaxed max-w-[280px]">
                             Geçmiş net skorlarınız burada görüntülenecek.
@@ -391,7 +748,6 @@ export default function KisiselScreen() {
                 <FlashList
                     data={yksCalculations}
                     renderItem={renderYKSCalculation}
-                    estimatedItemSize={150}
                     contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
                 />
             </View>
@@ -474,37 +830,131 @@ export default function KisiselScreen() {
                                 </View>
                                 <Text className="text-lg font-bold text-slate-800">Temel Yeterlilik Testi</Text>
                             </View>
+                            {!isEditingTYT ? (
+                                <TouchableOpacity
+                                    onPress={handleStartEditingTYT}
+                                    className="p-2"
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <Edit2 size={20} color="#64748b" />
+                                </TouchableOpacity>
+                            ) : (
+                                <View className="flex-row gap-2">
+                                    <TouchableOpacity
+                                        onPress={handleCancelEditingTYT}
+                                        className="p-2"
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <X size={20} color="#ef4444" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleSaveTYT}
+                                        className="p-2"
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <Save size={20} color="#10b981" />
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
-                        <Text className="text-xs text-slate-500 mb-4 ml-0">
-                            Başlangıç: 145.47
-                        </Text>
 
-                        <ReadOnlySectionRow
-                            label="Türkçe"
-                            help="40 soru"
-                            value={selectedCalculation.tytValues.turkce}
-                        />
-                        <ReadOnlySectionRow
-                            label="Sosyal Bilimler"
-                            help="20 soru"
-                            value={selectedCalculation.tytValues.sosyal}
-                        />
-                        <ReadOnlySectionRow
-                            label="Temel Matematik"
-                            help="40 soru"
-                            value={selectedCalculation.tytValues.matematik}
-                        />
-                        <ReadOnlySectionRow
-                            label="Fen Bilimleri"
-                            help="20 soru"
-                            value={selectedCalculation.tytValues.fen}
-                        />
+                        {isEditingTYT ? (
+                            <>
+                                <EditableSectionRow
+                                    label="Türkçe"
+                                    help="40 soru"
+                                    value={editedTYTValues.turkce || selectedCalculation.tytValues.turkce}
+                                    onChangeCorrect={(text) => setEditedTYTValues(prev => ({
+                                        ...prev,
+                                        turkce: { ...(prev.turkce || selectedCalculation.tytValues.turkce), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedTYTValues(prev => ({
+                                        ...prev,
+                                        turkce: { ...(prev.turkce || selectedCalculation.tytValues.turkce), wrong: text }
+                                    }))}
+                                    maxLimit={40}
+                                />
+                                <EditableSectionRow
+                                    label="Sosyal Bilimler"
+                                    help="20 soru"
+                                    value={editedTYTValues.sosyal || selectedCalculation.tytValues.sosyal}
+                                    onChangeCorrect={(text) => setEditedTYTValues(prev => ({
+                                        ...prev,
+                                        sosyal: { ...(prev.sosyal || selectedCalculation.tytValues.sosyal), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedTYTValues(prev => ({
+                                        ...prev,
+                                        sosyal: { ...(prev.sosyal || selectedCalculation.tytValues.sosyal), wrong: text }
+                                    }))}
+                                    maxLimit={20}
+                                />
+                                <EditableSectionRow
+                                    label="Temel Matematik"
+                                    help="40 soru"
+                                    value={editedTYTValues.matematik || selectedCalculation.tytValues.matematik}
+                                    onChangeCorrect={(text) => setEditedTYTValues(prev => ({
+                                        ...prev,
+                                        matematik: { ...(prev.matematik || selectedCalculation.tytValues.matematik), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedTYTValues(prev => ({
+                                        ...prev,
+                                        matematik: { ...(prev.matematik || selectedCalculation.tytValues.matematik), wrong: text }
+                                    }))}
+                                    maxLimit={40}
+                                />
+                                <EditableSectionRow
+                                    label="Fen Bilimleri"
+                                    help="20 soru"
+                                    value={editedTYTValues.fen || selectedCalculation.tytValues.fen}
+                                    onChangeCorrect={(text) => setEditedTYTValues(prev => ({
+                                        ...prev,
+                                        fen: { ...(prev.fen || selectedCalculation.tytValues.fen), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedTYTValues(prev => ({
+                                        ...prev,
+                                        fen: { ...(prev.fen || selectedCalculation.tytValues.fen), wrong: text }
+                                    }))}
+                                    maxLimit={20}
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <ReadOnlySectionRow
+                                    label="Türkçe"
+                                    help="40 soru"
+                                    value={selectedCalculation.tytValues.turkce}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Sosyal Bilimler"
+                                    help="20 soru"
+                                    value={selectedCalculation.tytValues.sosyal}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Temel Matematik"
+                                    help="40 soru"
+                                    value={selectedCalculation.tytValues.matematik}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Fen Bilimleri"
+                                    help="20 soru"
+                                    value={selectedCalculation.tytValues.fen}
+                                />
+                            </>
+                        )}
 
                         <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
                             <View className="flex-row items-center justify-between">
                                 <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam TYT Net</Text>
                                 <Text className="text-lg font-bold text-blue-600 tracking-tight">
-                                    {tytTotalNet.toFixed(2).replace('.', ',')}
+                                    {isEditingTYT 
+                                        ? (
+                                            getNetFromValue(editedTYTValues.turkce || selectedCalculation.tytValues.turkce) +
+                                            getNetFromValue(editedTYTValues.matematik || selectedCalculation.tytValues.matematik) +
+                                            getNetFromValue(editedTYTValues.sosyal || selectedCalculation.tytValues.sosyal) +
+                                            getNetFromValue(editedTYTValues.fen || selectedCalculation.tytValues.fen)
+                                        ).toFixed(2).replace('.', ',')
+                                        : tytTotalNet.toFixed(2).replace('.', ',')
+                                    }
                                 </Text>
                             </View>
                         </View>
@@ -519,37 +969,131 @@ export default function KisiselScreen() {
                                 </View>
                                 <Text className="text-lg font-bold text-slate-800">Sayısal Alan</Text>
                             </View>
+                            {!isEditingSAY ? (
+                                <TouchableOpacity
+                                    onPress={handleStartEditingSAY}
+                                    className="p-2"
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <Edit2 size={20} color="#64748b" />
+                                </TouchableOpacity>
+                            ) : (
+                                <View className="flex-row gap-2">
+                                    <TouchableOpacity
+                                        onPress={handleCancelEditingSAY}
+                                        className="p-2"
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <X size={20} color="#ef4444" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleSaveSAY}
+                                        className="p-2"
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <Save size={20} color="#10b981" />
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
-                        <Text className="text-xs text-slate-500 mb-4 ml-0">
-                            Başlangıç: 132.87
-                        </Text>
 
-                        <ReadOnlySectionRow
-                            label="AYT Matematik"
-                            help=""
-                            value={selectedCalculation.aytValues.aytMatematik}
-                        />
-                        <ReadOnlySectionRow
-                            label="Fizik"
-                            help=""
-                            value={selectedCalculation.aytValues.aytFizik}
-                        />
-                        <ReadOnlySectionRow
-                            label="Kimya"
-                            help=""
-                            value={selectedCalculation.aytValues.aytKimya}
-                        />
-                        <ReadOnlySectionRow
-                            label="Biyoloji"
-                            help=""
-                            value={selectedCalculation.aytValues.aytBiyoloji}
-                        />
+                        {isEditingSAY ? (
+                            <>
+                                <EditableSectionRow
+                                    label="AYT Matematik"
+                                    help="40 soru"
+                                    value={editedSAYValues.aytMatematik || selectedCalculation.aytValues.aytMatematik}
+                                    onChangeCorrect={(text) => setEditedSAYValues(prev => ({
+                                        ...prev,
+                                        aytMatematik: { ...(prev.aytMatematik || selectedCalculation.aytValues.aytMatematik), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedSAYValues(prev => ({
+                                        ...prev,
+                                        aytMatematik: { ...(prev.aytMatematik || selectedCalculation.aytValues.aytMatematik), wrong: text }
+                                    }))}
+                                    maxLimit={40}
+                                />
+                                <EditableSectionRow
+                                    label="Fizik"
+                                    help="14 soru"
+                                    value={editedSAYValues.aytFizik || selectedCalculation.aytValues.aytFizik}
+                                    onChangeCorrect={(text) => setEditedSAYValues(prev => ({
+                                        ...prev,
+                                        aytFizik: { ...(prev.aytFizik || selectedCalculation.aytValues.aytFizik), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedSAYValues(prev => ({
+                                        ...prev,
+                                        aytFizik: { ...(prev.aytFizik || selectedCalculation.aytValues.aytFizik), wrong: text }
+                                    }))}
+                                    maxLimit={14}
+                                />
+                                <EditableSectionRow
+                                    label="Kimya"
+                                    help="13 soru"
+                                    value={editedSAYValues.aytKimya || selectedCalculation.aytValues.aytKimya}
+                                    onChangeCorrect={(text) => setEditedSAYValues(prev => ({
+                                        ...prev,
+                                        aytKimya: { ...(prev.aytKimya || selectedCalculation.aytValues.aytKimya), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedSAYValues(prev => ({
+                                        ...prev,
+                                        aytKimya: { ...(prev.aytKimya || selectedCalculation.aytValues.aytKimya), wrong: text }
+                                    }))}
+                                    maxLimit={13}
+                                />
+                                <EditableSectionRow
+                                    label="Biyoloji"
+                                    help="13 soru"
+                                    value={editedSAYValues.aytBiyoloji || selectedCalculation.aytValues.aytBiyoloji}
+                                    onChangeCorrect={(text) => setEditedSAYValues(prev => ({
+                                        ...prev,
+                                        aytBiyoloji: { ...(prev.aytBiyoloji || selectedCalculation.aytValues.aytBiyoloji), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedSAYValues(prev => ({
+                                        ...prev,
+                                        aytBiyoloji: { ...(prev.aytBiyoloji || selectedCalculation.aytValues.aytBiyoloji), wrong: text }
+                                    }))}
+                                    maxLimit={13}
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <ReadOnlySectionRow
+                                    label="AYT Matematik"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytMatematik}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Fizik"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytFizik}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Kimya"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytKimya}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Biyoloji"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytBiyoloji}
+                                />
+                            </>
+                        )}
 
                         <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
                             <View className="flex-row items-center justify-between">
                                 <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam AYT Net</Text>
                                 <Text className="text-lg font-bold text-emerald-600 tracking-tight">
-                                    {aytSayTotalNet.toFixed(2).replace('.', ',')}
+                                    {isEditingSAY
+                                        ? (
+                                            getNetFromValue(editedSAYValues.aytMatematik || selectedCalculation.aytValues.aytMatematik) +
+                                            getNetFromValue(editedSAYValues.aytFizik || selectedCalculation.aytValues.aytFizik) +
+                                            getNetFromValue(editedSAYValues.aytKimya || selectedCalculation.aytValues.aytKimya) +
+                                            getNetFromValue(editedSAYValues.aytBiyoloji || selectedCalculation.aytValues.aytBiyoloji)
+                                        ).toFixed(2).replace('.', ',')
+                                        : aytSayTotalNet.toFixed(2).replace('.', ',')
+                                    }
                                 </Text>
                             </View>
                         </View>
@@ -564,37 +1108,131 @@ export default function KisiselScreen() {
                                 </View>
                                 <Text className="text-lg font-bold text-slate-800">Eşit Ağırlık Alan</Text>
                             </View>
+                            {!isEditingEA ? (
+                                <TouchableOpacity
+                                    onPress={handleStartEditingEA}
+                                    className="p-2"
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <Edit2 size={20} color="#64748b" />
+                                </TouchableOpacity>
+                            ) : (
+                                <View className="flex-row gap-2">
+                                    <TouchableOpacity
+                                        onPress={handleCancelEditingEA}
+                                        className="p-2"
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <X size={20} color="#ef4444" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleSaveEA}
+                                        className="p-2"
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <Save size={20} color="#10b981" />
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
-                        <Text className="text-xs text-slate-500 mb-4 ml-0">
-                            Başlangıç: 129.34
-                        </Text>
 
-                        <ReadOnlySectionRow
-                            label="AYT Matematik"
-                            help=""
-                            value={selectedCalculation.aytValues.aytMatematik}
-                        />
-                        <ReadOnlySectionRow
-                            label="Edebiyat"
-                            help=""
-                            value={selectedCalculation.aytValues.aytEdebiyat}
-                        />
-                        <ReadOnlySectionRow
-                            label="Tarih-1"
-                            help=""
-                            value={selectedCalculation.aytValues.aytTarih1}
-                        />
-                        <ReadOnlySectionRow
-                            label="Coğrafya-1"
-                            help=""
-                            value={selectedCalculation.aytValues.aytCografya1}
-                        />
+                        {isEditingEA ? (
+                            <>
+                                <EditableSectionRow
+                                    label="AYT Matematik"
+                                    help="40 soru"
+                                    value={editedEAValues.aytMatematik || selectedCalculation.aytValues.aytMatematik}
+                                    onChangeCorrect={(text) => setEditedEAValues(prev => ({
+                                        ...prev,
+                                        aytMatematik: { ...(prev.aytMatematik || selectedCalculation.aytValues.aytMatematik), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedEAValues(prev => ({
+                                        ...prev,
+                                        aytMatematik: { ...(prev.aytMatematik || selectedCalculation.aytValues.aytMatematik), wrong: text }
+                                    }))}
+                                    maxLimit={40}
+                                />
+                                <EditableSectionRow
+                                    label="Edebiyat"
+                                    help="24 soru"
+                                    value={editedEAValues.aytEdebiyat || selectedCalculation.aytValues.aytEdebiyat}
+                                    onChangeCorrect={(text) => setEditedEAValues(prev => ({
+                                        ...prev,
+                                        aytEdebiyat: { ...(prev.aytEdebiyat || selectedCalculation.aytValues.aytEdebiyat), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedEAValues(prev => ({
+                                        ...prev,
+                                        aytEdebiyat: { ...(prev.aytEdebiyat || selectedCalculation.aytValues.aytEdebiyat), wrong: text }
+                                    }))}
+                                    maxLimit={24}
+                                />
+                                <EditableSectionRow
+                                    label="Tarih-1"
+                                    help="10 soru"
+                                    value={editedEAValues.aytTarih1 || selectedCalculation.aytValues.aytTarih1}
+                                    onChangeCorrect={(text) => setEditedEAValues(prev => ({
+                                        ...prev,
+                                        aytTarih1: { ...(prev.aytTarih1 || selectedCalculation.aytValues.aytTarih1), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedEAValues(prev => ({
+                                        ...prev,
+                                        aytTarih1: { ...(prev.aytTarih1 || selectedCalculation.aytValues.aytTarih1), wrong: text }
+                                    }))}
+                                    maxLimit={10}
+                                />
+                                <EditableSectionRow
+                                    label="Coğrafya-1"
+                                    help="6 soru"
+                                    value={editedEAValues.aytCografya1 || selectedCalculation.aytValues.aytCografya1}
+                                    onChangeCorrect={(text) => setEditedEAValues(prev => ({
+                                        ...prev,
+                                        aytCografya1: { ...(prev.aytCografya1 || selectedCalculation.aytValues.aytCografya1), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedEAValues(prev => ({
+                                        ...prev,
+                                        aytCografya1: { ...(prev.aytCografya1 || selectedCalculation.aytValues.aytCografya1), wrong: text }
+                                    }))}
+                                    maxLimit={6}
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <ReadOnlySectionRow
+                                    label="AYT Matematik"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytMatematik}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Edebiyat"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytEdebiyat}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Tarih-1"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytTarih1}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Coğrafya-1"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytCografya1}
+                                />
+                            </>
+                        )}
 
                         <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
                             <View className="flex-row items-center justify-between">
                                 <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam AYT Net</Text>
                                 <Text className="text-lg font-bold text-purple-600 tracking-tight">
-                                    {aytEaTotalNet.toFixed(2).replace('.', ',')}
+                                    {isEditingEA
+                                        ? (
+                                            getNetFromValue(editedEAValues.aytMatematik || selectedCalculation.aytValues.aytMatematik) +
+                                            getNetFromValue(editedEAValues.aytEdebiyat || selectedCalculation.aytValues.aytEdebiyat) +
+                                            getNetFromValue(editedEAValues.aytTarih1 || selectedCalculation.aytValues.aytTarih1) +
+                                            getNetFromValue(editedEAValues.aytCografya1 || selectedCalculation.aytValues.aytCografya1)
+                                        ).toFixed(2).replace('.', ',')
+                                        : aytEaTotalNet.toFixed(2).replace('.', ',')
+                                    }
                                 </Text>
                             </View>
                         </View>
@@ -609,52 +1247,191 @@ export default function KisiselScreen() {
                                 </View>
                                 <Text className="text-lg font-bold text-slate-800">Sözel Alan</Text>
                             </View>
+                            {!isEditingSOZ ? (
+                                <TouchableOpacity
+                                    onPress={handleStartEditingSOZ}
+                                    className="p-2"
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <Edit2 size={20} color="#64748b" />
+                                </TouchableOpacity>
+                            ) : (
+                                <View className="flex-row gap-2">
+                                    <TouchableOpacity
+                                        onPress={handleCancelEditingSOZ}
+                                        className="p-2"
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <X size={20} color="#ef4444" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleSaveSOZ}
+                                        className="p-2"
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <Save size={20} color="#10b981" />
+                                    </TouchableOpacity>
+                                </View>
+                            )}
                         </View>
-                        <Text className="text-xs text-slate-500 mb-4 ml-0">
-                            Başlangıç: 129.61
-                        </Text>
 
-                        <ReadOnlySectionRow
-                            label="Edebiyat"
-                            help=""
-                            value={selectedCalculation.aytValues.aytEdebiyat}
-                        />
-                        <ReadOnlySectionRow
-                            label="Tarih-1"
-                            help=""
-                            value={selectedCalculation.aytValues.aytTarih1}
-                        />
-                        <ReadOnlySectionRow
-                            label="Coğrafya-1"
-                            help=""
-                            value={selectedCalculation.aytValues.aytCografya1}
-                        />
-                        <ReadOnlySectionRow
-                            label="Tarih-2"
-                            help=""
-                            value={selectedCalculation.aytValues.aytTarih2}
-                        />
-                        <ReadOnlySectionRow
-                            label="Coğrafya-2"
-                            help=""
-                            value={selectedCalculation.aytValues.aytCografya2}
-                        />
-                        <ReadOnlySectionRow
-                            label="Felsefe Grubu"
-                            help=""
-                            value={selectedCalculation.aytValues.aytFelsefe}
-                        />
-                        <ReadOnlySectionRow
-                            label="Din Kültürü"
-                            help=""
-                            value={selectedCalculation.aytValues.aytDin}
-                        />
+                        {isEditingSOZ ? (
+                            <>
+                                <EditableSectionRow
+                                    label="Edebiyat"
+                                    help="24 soru"
+                                    value={editedSOZValues.aytEdebiyat || selectedCalculation.aytValues.aytEdebiyat}
+                                    onChangeCorrect={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytEdebiyat: { ...(prev.aytEdebiyat || selectedCalculation.aytValues.aytEdebiyat), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytEdebiyat: { ...(prev.aytEdebiyat || selectedCalculation.aytValues.aytEdebiyat), wrong: text }
+                                    }))}
+                                    maxLimit={24}
+                                />
+                                <EditableSectionRow
+                                    label="Tarih-1"
+                                    help="10 soru"
+                                    value={editedSOZValues.aytTarih1 || selectedCalculation.aytValues.aytTarih1}
+                                    onChangeCorrect={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytTarih1: { ...(prev.aytTarih1 || selectedCalculation.aytValues.aytTarih1), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytTarih1: { ...(prev.aytTarih1 || selectedCalculation.aytValues.aytTarih1), wrong: text }
+                                    }))}
+                                    maxLimit={10}
+                                />
+                                <EditableSectionRow
+                                    label="Coğrafya-1"
+                                    help="6 soru"
+                                    value={editedSOZValues.aytCografya1 || selectedCalculation.aytValues.aytCografya1}
+                                    onChangeCorrect={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytCografya1: { ...(prev.aytCografya1 || selectedCalculation.aytValues.aytCografya1), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytCografya1: { ...(prev.aytCografya1 || selectedCalculation.aytValues.aytCografya1), wrong: text }
+                                    }))}
+                                    maxLimit={6}
+                                />
+                                <EditableSectionRow
+                                    label="Tarih-2"
+                                    help="11 soru"
+                                    value={editedSOZValues.aytTarih2 || selectedCalculation.aytValues.aytTarih2}
+                                    onChangeCorrect={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytTarih2: { ...(prev.aytTarih2 || selectedCalculation.aytValues.aytTarih2), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytTarih2: { ...(prev.aytTarih2 || selectedCalculation.aytValues.aytTarih2), wrong: text }
+                                    }))}
+                                    maxLimit={11}
+                                />
+                                <EditableSectionRow
+                                    label="Coğrafya-2"
+                                    help="11 soru"
+                                    value={editedSOZValues.aytCografya2 || selectedCalculation.aytValues.aytCografya2}
+                                    onChangeCorrect={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytCografya2: { ...(prev.aytCografya2 || selectedCalculation.aytValues.aytCografya2), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytCografya2: { ...(prev.aytCografya2 || selectedCalculation.aytValues.aytCografya2), wrong: text }
+                                    }))}
+                                    maxLimit={11}
+                                />
+                                <EditableSectionRow
+                                    label="Felsefe Grubu"
+                                    help="12 soru"
+                                    value={editedSOZValues.aytFelsefe || selectedCalculation.aytValues.aytFelsefe}
+                                    onChangeCorrect={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytFelsefe: { ...(prev.aytFelsefe || selectedCalculation.aytValues.aytFelsefe), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytFelsefe: { ...(prev.aytFelsefe || selectedCalculation.aytValues.aytFelsefe), wrong: text }
+                                    }))}
+                                    maxLimit={12}
+                                />
+                                <EditableSectionRow
+                                    label="Din Kültürü"
+                                    help="6 soru"
+                                    value={editedSOZValues.aytDin || selectedCalculation.aytValues.aytDin}
+                                    onChangeCorrect={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytDin: { ...(prev.aytDin || selectedCalculation.aytValues.aytDin), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedSOZValues(prev => ({
+                                        ...prev,
+                                        aytDin: { ...(prev.aytDin || selectedCalculation.aytValues.aytDin), wrong: text }
+                                    }))}
+                                    maxLimit={6}
+                                />
+                            </>
+                        ) : (
+                            <>
+                                <ReadOnlySectionRow
+                                    label="Edebiyat"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytEdebiyat}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Tarih-1"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytTarih1}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Coğrafya-1"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytCografya1}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Tarih-2"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytTarih2}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Coğrafya-2"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytCografya2}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Felsefe Grubu"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytFelsefe}
+                                />
+                                <ReadOnlySectionRow
+                                    label="Din Kültürü"
+                                    help=""
+                                    value={selectedCalculation.aytValues.aytDin}
+                                />
+                            </>
+                        )}
 
                         <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
                             <View className="flex-row items-center justify-between">
                                 <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Toplam AYT Net</Text>
                                 <Text className="text-lg font-bold text-orange-600 tracking-tight">
-                                    {aytSozTotalNet.toFixed(2).replace('.', ',')}
+                                    {isEditingSOZ
+                                        ? (
+                                            getNetFromValue(editedSOZValues.aytEdebiyat || selectedCalculation.aytValues.aytEdebiyat) +
+                                            getNetFromValue(editedSOZValues.aytTarih1 || selectedCalculation.aytValues.aytTarih1) +
+                                            getNetFromValue(editedSOZValues.aytCografya1 || selectedCalculation.aytValues.aytCografya1) +
+                                            getNetFromValue(editedSOZValues.aytTarih2 || selectedCalculation.aytValues.aytTarih2) +
+                                            getNetFromValue(editedSOZValues.aytCografya2 || selectedCalculation.aytValues.aytCografya2) +
+                                            getNetFromValue(editedSOZValues.aytFelsefe || selectedCalculation.aytValues.aytFelsefe) +
+                                            getNetFromValue(editedSOZValues.aytDin || selectedCalculation.aytValues.aytDin)
+                                        ).toFixed(2).replace('.', ',')
+                                        : aytSozTotalNet.toFixed(2).replace('.', ',')
+                                    }
                                 </Text>
                             </View>
                         </View>
@@ -670,27 +1447,199 @@ export default function KisiselScreen() {
                                     </View>
                                     <Text className="text-lg font-bold text-slate-800">Yabancı Dil Alan</Text>
                                 </View>
+                                {!isEditingDIL ? (
+                                    <TouchableOpacity
+                                        onPress={handleStartEditingDIL}
+                                        className="p-2"
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <Edit2 size={20} color="#64748b" />
+                                    </TouchableOpacity>
+                                ) : (
+                                    <View className="flex-row gap-2">
+                                        <TouchableOpacity
+                                            onPress={handleCancelEditingDIL}
+                                            className="p-2"
+                                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                        >
+                                            <X size={20} color="#ef4444" />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity
+                                            onPress={handleSaveDIL}
+                                            className="p-2"
+                                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                        >
+                                            <Save size={20} color="#10b981" />
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
                             </View>
-                            <Text className="text-xs text-slate-500 mb-4 ml-0">
-                                Başlangıç: 105.92
-                            </Text>
 
-                            <ReadOnlySectionRow
-                                label="YDT (Yabancı Dil Testi)"
-                                help="80 soru"
-                                value={selectedCalculation.aytValues.aytYdt}
-                            />
+                            {isEditingDIL ? (
+                                <EditableSectionRow
+                                    label="YDT (Yabancı Dil Testi)"
+                                    help="80 soru"
+                                    value={editedDILValues.aytYdt || selectedCalculation.aytValues.aytYdt}
+                                    onChangeCorrect={(text) => setEditedDILValues(prev => ({
+                                        ...prev,
+                                        aytYdt: { ...(prev.aytYdt || selectedCalculation.aytValues.aytYdt), correct: text }
+                                    }))}
+                                    onChangeWrong={(text) => setEditedDILValues(prev => ({
+                                        ...prev,
+                                        aytYdt: { ...(prev.aytYdt || selectedCalculation.aytValues.aytYdt), wrong: text }
+                                    }))}
+                                    maxLimit={80}
+                                />
+                            ) : (
+                                <ReadOnlySectionRow
+                                    label="YDT (Yabancı Dil Testi)"
+                                    help="80 soru"
+                                    value={selectedCalculation.aytValues.aytYdt}
+                                />
+                            )}
 
                             <View className="mt-4 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
                                 <View className="flex-row items-center justify-between">
                                     <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">YDT Net</Text>
                                     <Text className="text-lg font-bold text-rose-600 tracking-tight">
-                                        {aytYdtNet.toFixed(2).replace('.', ',')}
+                                        {isEditingDIL
+                                            ? getNetFromValue(editedDILValues.aytYdt || selectedCalculation.aytValues.aytYdt).toFixed(2).replace('.', ',')
+                                            : aytYdtNet.toFixed(2).replace('.', ',')
+                                        }
                                     </Text>
                                 </View>
                             </View>
                         </View>
                     )}
+
+                    {/* OBP Card */}
+                    <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                        <View className="flex-row items-center justify-between mb-2">
+                            <View className="flex-row items-center">
+                                <View className="bg-indigo-50 px-2.5 py-1 rounded-md mr-2">
+                                    <Text className="text-indigo-700 font-bold text-[10px] tracking-wider uppercase">OBP</Text>
+                                </View>
+                                <Text className="text-lg font-bold text-slate-800">Diploma Notu</Text>
+                            </View>
+                            {!isEditingOBP ? (
+                                <TouchableOpacity
+                                    onPress={handleStartEditingOBP}
+                                    className="p-2"
+                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                >
+                                    <Edit2 size={20} color="#64748b" />
+                                </TouchableOpacity>
+                            ) : (
+                                <View className="flex-row gap-2">
+                                    <TouchableOpacity
+                                        onPress={handleCancelEditingOBP}
+                                        className="p-2"
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <X size={20} color="#ef4444" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleSaveOBP}
+                                        className="p-2"
+                                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                    >
+                                        <Save size={20} color="#10b981" />
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+                        </View>
+
+                        {isEditingOBP ? (
+                            <>
+                                <View className="mb-3">
+                                    <Text className="text-sm font-medium text-slate-800 mb-2">Diploma Notu (50-100)</Text>
+                                    <TextInput
+                                        keyboardType="numeric"
+                                        value={editedDiplomaGrade}
+                                        onChangeText={handleDiplomaGradeChange}
+                                        placeholder="Örn: 85"
+                                        placeholderTextColor="#94a3b8"
+                                        className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-base text-slate-900 font-medium"
+                                    />
+                                </View>
+
+                                <TouchableOpacity
+                                    onPress={() => setEditedKirikOBP(!editedKirikOBP)}
+                                    className="flex-row items-center mb-3"
+                                    activeOpacity={0.7}
+                                >
+                                    <View
+                                        className={`w-5 h-5 rounded border-2 mr-2 items-center justify-center ${
+                                            editedKirikOBP ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'
+                                        }`}
+                                    >
+                                        {editedKirikOBP && <Text className="text-white text-xs">✓</Text>}
+                                    </View>
+                                    <Text className="text-sm text-slate-700">Önceki Sene Yerleştim</Text>
+                                </TouchableOpacity>
+
+                                <View className="mb-3">
+                                    <Text className="text-xs text-slate-500">
+                                        Yerleştirme Puanı = Ham Puan + (Diploma Notu × {(editedKirikOBP ? 0.3 : 0.6).toFixed(1)})
+                                    </Text>
+                                </View>
+
+                                {(() => {
+                                    const diplomaNotu = parseFloat(editedDiplomaGrade.replace(',', '.')) || 0;
+                                    const obpKatsayisi = editedKirikOBP ? 0.3 : 0.6;
+                                    const obpEkPuan = diplomaNotu * obpKatsayisi;
+                                    return obpEkPuan > 0 ? (
+                                        <View className="mt-3 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                                            <View className="flex-row items-center justify-between">
+                                                <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">OBP Ek Puanı</Text>
+                                                <Text className="text-lg font-bold text-indigo-600 tracking-tight">
+                                                    {obpEkPuan.toFixed(3).replace('.', ',')}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    ) : null;
+                                })()}
+                            </>
+                        ) : (
+                            <>
+                                <View className="mb-3">
+                                    <Text className="text-sm font-medium text-slate-800 mb-2">Diploma Notu</Text>
+                                    <View className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                                        <Text className="text-base text-slate-900 font-medium">
+                                            {selectedCalculation.diplomaGrade || 'Belirtilmemiş'}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                <View className="flex-row items-center mb-3">
+                                    <View
+                                        className={`w-5 h-5 rounded border-2 mr-2 items-center justify-center ${
+                                            selectedCalculation.kirikOBP ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'
+                                        }`}
+                                    >
+                                        {selectedCalculation.kirikOBP && <Text className="text-white text-xs">✓</Text>}
+                                    </View>
+                                    <Text className="text-sm text-slate-700">Önceki Sene Yerleştim</Text>
+                                </View>
+
+                                {(() => {
+                                    const diplomaNotu = parseFloat(selectedCalculation.diplomaGrade.replace(',', '.')) || 0;
+                                    const obpKatsayisi = selectedCalculation.kirikOBP ? 0.3 : 0.6;
+                                    const obpEkPuan = diplomaNotu * obpKatsayisi;
+                                    return obpEkPuan > 0 ? (
+                                        <View className="mt-3 pt-3 border-t border-slate-200 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                                            <View className="flex-row items-center justify-between">
+                                                <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">OBP Ek Puanı</Text>
+                                                <Text className="text-lg font-bold text-indigo-600 tracking-tight">
+                                                    {obpEkPuan.toFixed(3).replace('.', ',')}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    ) : null;
+                                })()}
+                            </>
+                        )}
+                    </View>
 
                     {/* Results Card */}
                     <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
@@ -718,6 +1667,14 @@ export default function KisiselScreen() {
                                         </Text>
                                     </View>
                                 )}
+                                {selectedCalculation.tytEstimatedRank !== null && selectedCalculation.tytEstimatedRank !== undefined && (
+                                    <View className="flex-row items-center justify-between pt-1 border-t border-blue-200">
+                                        <Text className="text-xs text-blue-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                                        <Text className="text-base font-bold text-blue-700">
+                                            {selectedCalculation.tytEstimatedRank.toLocaleString('tr-TR')}
+                                        </Text>
+                                    </View>
+                                )}
                             </View>
                         </View>
 
@@ -736,6 +1693,14 @@ export default function KisiselScreen() {
                                         <Text className="text-xs text-emerald-600 font-medium">Yerleştirme Puanı</Text>
                                         <Text className="text-base font-bold text-emerald-700">
                                             {selectedCalculation.sayYerlesme.toFixed(3).replace('.', ',')}
+                                        </Text>
+                                    </View>
+                                )}
+                                {selectedCalculation.sayEstimatedRank !== null && selectedCalculation.sayEstimatedRank !== undefined && (
+                                    <View className="flex-row items-center justify-between pt-1 border-t border-emerald-200">
+                                        <Text className="text-xs text-emerald-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                                        <Text className="text-base font-bold text-emerald-700">
+                                            {selectedCalculation.sayEstimatedRank.toLocaleString('tr-TR')}
                                         </Text>
                                     </View>
                                 )}
@@ -760,6 +1725,14 @@ export default function KisiselScreen() {
                                         </Text>
                                     </View>
                                 )}
+                                {selectedCalculation.eaEstimatedRank !== null && selectedCalculation.eaEstimatedRank !== undefined && (
+                                    <View className="flex-row items-center justify-between pt-1 border-t border-purple-200">
+                                        <Text className="text-xs text-purple-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                                        <Text className="text-base font-bold text-purple-700">
+                                            {selectedCalculation.eaEstimatedRank.toLocaleString('tr-TR')}
+                                        </Text>
+                                    </View>
+                                )}
                             </View>
                         </View>
 
@@ -778,6 +1751,14 @@ export default function KisiselScreen() {
                                         <Text className="text-xs text-orange-600 font-medium">Yerleştirme Puanı</Text>
                                         <Text className="text-base font-bold text-orange-700">
                                             {selectedCalculation.sozYerlesme.toFixed(3).replace('.', ',')}
+                                        </Text>
+                                    </View>
+                                )}
+                                {selectedCalculation.sozEstimatedRank !== null && selectedCalculation.sozEstimatedRank !== undefined && (
+                                    <View className="flex-row items-center justify-between pt-1 border-t border-orange-200">
+                                        <Text className="text-xs text-orange-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                                        <Text className="text-base font-bold text-orange-700">
+                                            {selectedCalculation.sozEstimatedRank.toLocaleString('tr-TR')}
                                         </Text>
                                     </View>
                                 )}
@@ -800,6 +1781,14 @@ export default function KisiselScreen() {
                                             <Text className="text-xs text-rose-600 font-medium">Yerleştirme Puanı</Text>
                                             <Text className="text-base font-bold text-rose-700">
                                                 {selectedCalculation.dilYerlesme.toFixed(3).replace('.', ',')}
+                                            </Text>
+                                        </View>
+                                    )}
+                                    {selectedCalculation.dilEstimatedRank !== null && selectedCalculation.dilEstimatedRank !== undefined && (
+                                        <View className="flex-row items-center justify-between pt-1 border-t border-rose-200">
+                                            <Text className="text-xs text-rose-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                                            <Text className="text-base font-bold text-rose-700">
+                                                {selectedCalculation.dilEstimatedRank.toLocaleString('tr-TR')}
                                             </Text>
                                         </View>
                                     )}
@@ -932,7 +1921,6 @@ export default function KisiselScreen() {
                     <FlashList
                         data={userLists}
                         renderItem={renderListItem}
-                        estimatedItemSize={80}
                         ListEmptyComponent={renderEmptyLists}
                         contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
                     />
@@ -1082,8 +2070,8 @@ function NetFormStatusScreen({ insets, onBack, calculations }: NetFormStatusScre
     const last5Calculations = calculations ? calculations.slice(0, 5) : [];
 
     return (
-        <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
-            <View className="px-5 py-4 border-b border-slate-100 flex-row items-center">
+        <View className="flex-1 bg-slate-50" style={{ paddingTop: insets.top }}>
+            <View className="px-5 py-4 border-b border-slate-100 flex-row items-center bg-white">
                 <TouchableOpacity
                     onPress={onBack}
                     className="mr-3 p-2"
@@ -1109,7 +2097,7 @@ function NetFormStatusScreen({ insets, onBack, calculations }: NetFormStatusScre
                         <BarChart3 size={48} color="#94a3b8" />
                     </View>
                     <Text className="text-xl font-bold text-slate-800 mb-3">
-                        Henüz net kaydedilmedi
+                        Henüz Net Kaydedilmedi
                     </Text>
                     <Text className="text-slate-500 text-center text-base leading-relaxed max-w-[280px]">
                         Net skorlarınızı görüntülemek için önce bir hesaplama kaydedin.
@@ -1280,7 +2268,7 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
                     <BarChart3 size={32} color="#94a3b8" />
                 </View>
                 <Text className="text-sm text-slate-400">
-                    Henüz net kaydı bulunmuyor
+                    Henüz Net Kaydı Bulunmuyor
                 </Text>
             </View>
         );
@@ -1403,7 +2391,7 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
                     <BarChart3 size={32} color="#94a3b8" />
                 </View>
                 <Text className="text-sm text-slate-400">
-                    Bu alan için henüz net kaydı bulunmuyor
+                    Bu Alan İçin Henüz Net Kaydı Bulunmuyor
                 </Text>
             </View>
         );
@@ -1871,6 +2859,212 @@ const getNetFromValue = (value: { correct: string; wrong: string }) => {
     return net < 0 ? 0 : net;
 };
 
+// Calculation functions (same as in yks.tsx)
+const calculateTYTHamPuan = (
+    turkceNet: number,
+    matNet: number,
+    sosyalNet: number,
+    fenNet: number
+) => {
+    const base = 145.20;
+    return base + 
+        (turkceNet * 2.83) + 
+        (sosyalNet * 2.99) + 
+        (matNet * 3.28) + 
+        (fenNet * 2.53);
+};
+
+const calculateSAYHamPuan = (
+    turkceNet: number,
+    matNet: number,
+    sosyalNet: number,
+    fenNet: number,
+    aytMatNet: number,
+    fizikNet: number,
+    kimyaNet: number,
+    biyolojiNet: number
+) => {
+    const base = 132.74;
+    const tytKatkisi = 
+        (turkceNet * 1.20) + 
+        (sosyalNet * 1.27) + 
+        (matNet * 1.39) + 
+        (fenNet * 1.07);
+    const aytKatkisi = 
+        (aytMatNet * 2.89) + 
+        (fizikNet * 2.46) + 
+        (kimyaNet * 2.53) + 
+        (biyolojiNet * 2.61);
+    return base + tytKatkisi + aytKatkisi;
+};
+
+const calculateEAHamPuan = (
+    turkceNet: number,
+    matNet: number,
+    sosyalNet: number,
+    fenNet: number,
+    aytMatNet: number,
+    edebiyatNet: number,
+    tarih1Net: number,
+    cografya1Net: number
+) => {
+    const base = 129.34;
+    const tytKatkisi = 
+        (turkceNet * 1.19) + 
+        (sosyalNet * 1.26) + 
+        (matNet * 1.38) + 
+        (fenNet * 1.07);
+    const aytKatkisi = 
+        (aytMatNet * 2.88) + 
+        (edebiyatNet * 2.94) + 
+        (tarih1Net * 2.53) + 
+        (cografya1Net * 2.85);
+    return base + tytKatkisi + aytKatkisi;
+};
+
+const calculateSOZHamPuan = (
+    turkceNet: number,
+    matNet: number,
+    sosyalNet: number,
+    fenNet: number,
+    edebiyatNet: number,
+    tarih1Net: number,
+    cografya1Net: number,
+    tarih2Net: number,
+    cografya2Net: number,
+    felsefeNet: number,
+    dinNet: number
+) => {
+    const base = 129.61;
+    const tytKatkisi = 
+        (turkceNet * 1.13) + 
+        (sosyalNet * 1.19) + 
+        (matNet * 1.31) + 
+        (fenNet * 1.01);
+    const aytKatkisi = 
+        (edebiyatNet * 2.79) + 
+        (tarih1Net * 2.39) + 
+        (cografya1Net * 2.70) + 
+        (tarih2Net * 3.80) + 
+        (cografya2Net * 2.47) + 
+        (felsefeNet * 3.76) + 
+        (dinNet * 2.36);
+    return base + tytKatkisi + aytKatkisi;
+};
+
+const calculateDILHamPuan = (
+    turkceNet: number,
+    matNet: number,
+    sosyalNet: number,
+    fenNet: number,
+    ydtNet: number
+) => {
+    const base = 105.92;
+    return base + 
+        (turkceNet * 1.53) + 
+        (sosyalNet * 1.62) + 
+        (matNet * 1.77) + 
+        (fenNet * 1.37) + 
+        (ydtNet * 2.60);
+};
+
+// Helper function to recalculate all scores, yerleştirme puanları, and estimated ranks
+const recalculateAllScores = (
+    tytValues: Record<string, { correct: string; wrong: string }>,
+    aytValues: Record<string, { correct: string; wrong: string }>,
+    diplomaGrade: string,
+    kirikOBP: boolean
+) => {
+    // Calculate TYT nets
+    const turkceNet = getNetFromValue(tytValues.turkce || { correct: '0', wrong: '0' });
+    const matematikNet = getNetFromValue(tytValues.matematik || { correct: '0', wrong: '0' });
+    const sosyalNet = getNetFromValue(tytValues.sosyal || { correct: '0', wrong: '0' });
+    const fenNet = getNetFromValue(tytValues.fen || { correct: '0', wrong: '0' });
+
+    // Check baraj
+    const passesBaraj = turkceNet >= 0.5 || matematikNet >= 0.5;
+
+    // Calculate AYT nets
+    const aytMatNet = getNetFromValue(aytValues.aytMatematik || { correct: '0', wrong: '0' });
+    const aytFizikNet = getNetFromValue(aytValues.aytFizik || { correct: '0', wrong: '0' });
+    const aytKimyaNet = getNetFromValue(aytValues.aytKimya || { correct: '0', wrong: '0' });
+    const aytBiyolojiNet = getNetFromValue(aytValues.aytBiyoloji || { correct: '0', wrong: '0' });
+    const aytEdebiyatNet = getNetFromValue(aytValues.aytEdebiyat || { correct: '0', wrong: '0' });
+    const aytTarih1Net = getNetFromValue(aytValues.aytTarih1 || { correct: '0', wrong: '0' });
+    const aytCografya1Net = getNetFromValue(aytValues.aytCografya1 || { correct: '0', wrong: '0' });
+    const aytTarih2Net = getNetFromValue(aytValues.aytTarih2 || { correct: '0', wrong: '0' });
+    const aytCografya2Net = getNetFromValue(aytValues.aytCografya2 || { correct: '0', wrong: '0' });
+    const aytFelsefeNet = getNetFromValue(aytValues.aytFelsefe || { correct: '0', wrong: '0' });
+    const aytDinNet = getNetFromValue(aytValues.aytDin || { correct: '0', wrong: '0' });
+    const aytYdtNet = aytValues.aytYdt ? getNetFromValue(aytValues.aytYdt) : 0;
+
+    // Calculate ham puanları
+    const tytHamPuan = passesBaraj ? calculateTYTHamPuan(turkceNet, matematikNet, sosyalNet, fenNet) : 0;
+    const sayHamPuan = passesBaraj ? calculateSAYHamPuan(
+        turkceNet, matematikNet, sosyalNet, fenNet,
+        aytMatNet, aytFizikNet, aytKimyaNet, aytBiyolojiNet
+    ) : 0;
+    const eaHamPuan = passesBaraj ? calculateEAHamPuan(
+        turkceNet, matematikNet, sosyalNet, fenNet,
+        aytMatNet, aytEdebiyatNet, aytTarih1Net, aytCografya1Net
+    ) : 0;
+    const sozHamPuan = passesBaraj ? calculateSOZHamPuan(
+        turkceNet, matematikNet, sosyalNet, fenNet,
+        aytEdebiyatNet, aytTarih1Net, aytCografya1Net,
+        aytTarih2Net, aytCografya2Net, aytFelsefeNet, aytDinNet
+    ) : 0;
+    const dilHamPuan = (passesBaraj && aytValues.aytYdt) 
+        ? calculateDILHamPuan(turkceNet, matematikNet, sosyalNet, fenNet, aytYdtNet)
+        : undefined;
+
+    // Calculate OBP ek puanı
+    const diplomaNotu = parseFloat(diplomaGrade.replace(',', '.')) || 80;
+    const obpKatsayisi = kirikOBP ? 0.3 : 0.6;
+    const obpEkPuan = diplomaNotu * obpKatsayisi;
+
+    // Calculate yerleştirme puanları
+    const tytYerlesme = tytHamPuan + obpEkPuan;
+    const sayYerlesme = sayHamPuan + obpEkPuan;
+    const eaYerlesme = eaHamPuan + obpEkPuan;
+    const sozYerlesme = sozHamPuan + obpEkPuan;
+    const dilYerlesme = dilHamPuan ? dilHamPuan + obpEkPuan : undefined;
+
+    // Calculate estimated ranks
+    const tytEstimatedRank = (passesBaraj && tytYerlesme > 0) 
+        ? estimateRanking(tytYerlesme, 'TYT') 
+        : null;
+    const sayEstimatedRank = (passesBaraj && sayYerlesme > 0 && (aytMatNet > 0 || aytFizikNet > 0 || aytKimyaNet > 0 || aytBiyolojiNet > 0))
+        ? estimateRanking(sayYerlesme, 'SAY')
+        : null;
+    const eaEstimatedRank = (passesBaraj && eaYerlesme > 0 && (aytMatNet > 0 || aytEdebiyatNet > 0 || aytTarih1Net > 0 || aytCografya1Net > 0))
+        ? estimateRanking(eaYerlesme, 'EA')
+        : null;
+    const sozEstimatedRank = (passesBaraj && sozYerlesme > 0 && (aytEdebiyatNet > 0 || aytTarih1Net > 0 || aytCografya1Net > 0))
+        ? estimateRanking(sozYerlesme, 'SÖZ')
+        : null;
+    const dilEstimatedRank = (passesBaraj && dilYerlesme && dilYerlesme > 0 && aytYdtNet > 0)
+        ? estimateRanking(dilYerlesme, 'DİL')
+        : null;
+
+    return {
+        tytHamPuan,
+        sayHamPuan,
+        eaHamPuan,
+        sozHamPuan,
+        dilHamPuan,
+        tytYerlesme,
+        sayYerlesme,
+        eaYerlesme,
+        sozYerlesme,
+        dilYerlesme,
+        tytEstimatedRank,
+        sayEstimatedRank,
+        eaEstimatedRank,
+        sozEstimatedRank,
+        dilEstimatedRank,
+    };
+};
+
 // Read-only section row component for displaying saved calculation values
 interface ReadOnlySectionRowProps {
     label: string;
@@ -1882,7 +3076,7 @@ function ReadOnlySectionRow({ label, help, value }: ReadOnlySectionRowProps) {
     const net = getNetFromValue(value);
 
     return (
-        <View className="mb-3 pb-3 border-b border-slate-100 last:border-b-0 last:pb-0 last:mb-0">
+        <View className="mb-3 py-3 border-b border-slate-100 last:border-b-0 last:pb-0 last:mb-0">
             <View className="flex-row items-center justify-between mb-2">
                 <Text className="text-sm font-medium text-slate-800">{label}</Text>
                 {help && (
@@ -1901,6 +3095,83 @@ function ReadOnlySectionRow({ label, help, value }: ReadOnlySectionRowProps) {
                     <View className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5">
                         <Text className="text-sm text-slate-900 font-medium">{value.wrong || '0'}</Text>
                     </View>
+                </View>
+                <View className="w-20 items-center justify-center">
+                    <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">Net</Text>
+                    <View className="bg-blue-50 border border-blue-200 rounded-xl px-3 py-2.5 w-full items-center">
+                        <Text className="text-sm font-semibold text-blue-700">{net.toFixed(2).replace('.', ',')}</Text>
+                    </View>
+                </View>
+            </View>
+        </View>
+    );
+}
+
+// Editable section row component for editing calculation values
+interface EditableSectionRowProps {
+    label: string;
+    help?: string;
+    value: { correct: string; wrong: string };
+    onChangeCorrect: (text: string) => void;
+    onChangeWrong: (text: string) => void;
+    maxLimit?: number;
+}
+
+function EditableSectionRow({ label, help, value, onChangeCorrect, onChangeWrong, maxLimit }: EditableSectionRowProps) {
+    const net = getNetFromValue(value);
+
+    const handleCorrectChange = (text: string) => {
+        let cleanedText = text.replace(/[^0-9,\.]/g, '');
+        if (maxLimit && cleanedText) {
+            const numValue = parseFloat(cleanedText.replace(',', '.')) || 0;
+            if (numValue > maxLimit) {
+                cleanedText = maxLimit.toString();
+            }
+        }
+        onChangeCorrect(cleanedText);
+    };
+
+    const handleWrongChange = (text: string) => {
+        let cleanedText = text.replace(/[^0-9,\.]/g, '');
+        if (maxLimit && cleanedText) {
+            const numValue = parseFloat(cleanedText.replace(',', '.')) || 0;
+            if (numValue > maxLimit) {
+                cleanedText = maxLimit.toString();
+            }
+        }
+        onChangeWrong(cleanedText);
+    };
+
+    return (
+        <View className="mb-3 py-3 border-b border-slate-100 last:border-b-0 last:pb-0 last:mb-0">
+            <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-sm font-medium text-slate-800">{label}</Text>
+                {help && (
+                    <Text className="text-xs text-slate-400 font-medium text-right max-w-[140px]">{help}</Text>
+                )}
+            </View>
+            <View className="flex-row gap-2">
+                <View className="flex-1">
+                    <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">Doğru</Text>
+                    <TextInput
+                        keyboardType="numeric"
+                        value={value.correct}
+                        onChangeText={handleCorrectChange}
+                        placeholder="0"
+                        placeholderTextColor="#94a3b8"
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 font-medium"
+                    />
+                </View>
+                <View className="flex-1">
+                    <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">Yanlış</Text>
+                    <TextInput
+                        keyboardType="numeric"
+                        value={value.wrong}
+                        onChangeText={handleWrongChange}
+                        placeholder="0"
+                        placeholderTextColor="#94a3b8"
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-900 font-medium"
+                    />
                 </View>
                 <View className="w-20 items-center justify-center">
                     <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-1">Net</Text>

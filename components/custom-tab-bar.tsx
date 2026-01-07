@@ -14,7 +14,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
   const indicatorPosition = useRef(new Animated.Value(0)).current;
 
   const activeIndex = state.index;
-  const activeTintColor = Colors[colorScheme ?? 'light'].tint;
+  const activeTintColor = '#ffffff'; // match dark tab bar primary color
 
   useEffect(() => {
     Animated.spring(indicatorPosition, {
