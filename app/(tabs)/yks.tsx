@@ -206,13 +206,14 @@ export default function YksNetScreen() {
   const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
   const [calculationName, setCalculationName] = useState('');
 
+  // Sections are initialized as FALSE to be closed by default
   const [sectionsOpen, setSectionsOpen] = useState({
-    tyt: true,
-    say: true,
-    ea: true,
-    soz: true,
-    dil: true,
-    obp: true,
+    tyt: false,
+    say: false,
+    ea: false,
+    soz: false,
+    dil: false,
+    obp: false, 
     results: true,
   });
 
@@ -817,14 +818,16 @@ export default function YksNetScreen() {
 
         {/* OBP Input Card */}
         <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
-          <View className="flex-row items-center mb-3">
-            <View className="bg-indigo-50 px-2.5 py-1 rounded-md mr-2">
-              <Text className="text-indigo-700 font-bold text-[10px] tracking-wider uppercase">OBP</Text>
+          <View className="flex-row items-center justify-between mb-2">
+            <View className="flex-row items-center">
+              <View className="bg-indigo-50 px-2.5 py-1 rounded-md mr-2">
+                <Text className="text-indigo-700 font-bold text-[10px] tracking-wider uppercase">OBP</Text>
+              </View>
+              <Text className="text-lg font-bold text-slate-800">Diploma Notu</Text>
             </View>
-            <Text className="text-lg font-bold text-slate-800">Diploma Notu</Text>
           </View>
 
-          <View className="mb-3">
+          <View className="mb-3 mt-2">
             <Text className="text-sm font-medium text-slate-800 mb-2">Diploma Notu (50-100)</Text>
             <TextInput
               keyboardType="numeric"
