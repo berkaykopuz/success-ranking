@@ -38,6 +38,13 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        } 
+      ],
+      "expo-dev-client",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-7326975715449797~4890783806"
         }
       ]
     ],
@@ -49,6 +56,11 @@
       "router": {},
       "eas": {
         "projectId": "a2c9978b-4e05-4a6a-9241-6d3aac0eb704"
+      },
+
+      "react-native-google-mobile-ads": {
+        "androidAppId": "ca-app-pub-7326975715449797~4890783806",
+        "userTrackingUsageDescription": "Tracking"
       }
     }
   }

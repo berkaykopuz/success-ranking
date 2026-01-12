@@ -4,12 +4,17 @@ import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 import { fetchRankings } from '../../src/api/rankings';
 import { FilterBar } from '../../src/components/FilterBar';
 import { RankingCard } from '../../src/components/RankingCard';
 import { useFilterStore } from '../../src/store/filterStore';
 import { useUserStore } from '../../src/store/userStore';
 import { RankingItem } from '../../src/types/ranking';
+
+const BANNER_AD_UNIT_ID = __DEV__
+  ? TestIds.BANNER
+  : 'ca-app-pub-7326975715449797/6012293782';
 
 export default function RankingScreen() {
   const insets = useSafeAreaInsets();
@@ -76,7 +81,16 @@ export default function RankingScreen() {
           ListEmptyComponent={renderEmpty}
           refreshing={isLoading}
           onRefresh={refetch}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        />
+      </View>
+      <View className="bg-white border-t border-slate-200 items-center">
+        <BannerAd
+          unitId={BANNER_AD_UNIT_ID}
+          size={BannerAdSize.BANNER}
+          requestOptions={{
+            requestNonPersonalizedAdsOnly: true,
+          }}
         />
       </View>
     </View>
