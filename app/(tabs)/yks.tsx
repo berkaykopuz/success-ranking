@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, Text, TextInput, View, TouchableOpacity, Modal, Pressable, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserStore } from '../../src/store/userStore';
 import { Save, ChevronDown, ChevronUp } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { estimateRanking } from '../../src/api/rankings';
+import { AdEventType, InterstitialAd, TestIds } from 'react-native-google-mobile-ads';
+import { useIsFocused } from '@react-navigation/native';
 
 // TYT Dersleri
 type TYTSectionKey = 'turkce' | 'matematik' | 'sosyal' | 'fen';
@@ -46,6 +48,29 @@ const AYT_MAX_LIMITS: Record<AYTSectionKey, number> = {
   aytFelsefe: 12,
   aytDin: 6,
   aytYdt: 80,
+};
+
+// Subject display names for error messages
+const TYT_SUBJECT_NAMES: Record<TYTSectionKey, string> = {
+  turkce: 'TYT Türkçe',
+  matematik: 'TYT Temel Matematik',
+  sosyal: 'TYT Sosyal Bilimler',
+  fen: 'TYT Fen Bilimleri',
+};
+
+const AYT_SUBJECT_NAMES: Record<AYTSectionKey, string> = {
+  aytMatematik: 'AYT Matematik',
+  aytFizik: 'AYT Fizik',
+  aytKimya: 'AYT Kimya',
+  aytBiyoloji: 'AYT Biyoloji',
+  aytEdebiyat: 'AYT Edebiyat',
+  aytTarih1: 'AYT Tarih-1',
+  aytCografya1: 'AYT Coğrafya-1',
+  aytTarih2: 'AYT Tarih-2',
+  aytCografya2: 'AYT Coğrafya-2',
+  aytFelsefe: 'AYT Felsefe Grubu',
+  aytDin: 'AYT Din Kültürü',
+  aytYdt: 'YDT Yabancı Dil',
 };
 
 const INITIAL_TYT_STATE: TYTState = {
@@ -196,8 +221,18 @@ const calculateDILHamPuan = (
     (ydtNet * 2.60);
 };
 
+// Interstitial ad configuration
+const INTERSTITIAL_AD_UNIT_ID = __DEV__
+  ? TestIds.INTERSTITIAL
+  : 'ca-app-pub-7326975715449797/6012293782';
+
+const interstitial = InterstitialAd.createForAdRequest(INTERSTITIAL_AD_UNIT_ID, {
+  requestNonPersonalizedAdsOnly: true,
+});
+
 export default function YksNetScreen() {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const { saveYKSCalculation } = useUserStore();
   const [tytValues, setTytValues] = useState<TYTState>(INITIAL_TYT_STATE);
   const [aytValues, setAytValues] = useState<AYTState>(INITIAL_AYT_STATE);
@@ -205,6 +240,51 @@ export default function YksNetScreen() {
   const [kirikOBP, setKirikOBP] = useState(false);
   const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
   const [calculationName, setCalculationName] = useState('');
+  const [isInterstitialLoaded, setIsInterstitialLoaded] = useState(false);
+  const [hasShownAd, setHasShownAd] = useState(false);
+
+  // Load interstitial ad for this screen
+  useEffect(() => {
+    const unsubscribeLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
+      setIsInterstitialLoaded(true);
+    });
+
+    const unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
+      setIsInterstitialLoaded(false);
+      setHasShownAd(true); // Mark that we've shown the ad
+      // Reload the ad after it's closed so it's ready for the next time
+      interstitial.load();
+    });
+
+    const unsubscribeError = interstitial.addAdEventListener(AdEventType.ERROR, () => {
+      setIsInterstitialLoaded(false);
+      // Try loading again on error
+      interstitial.load();
+    });
+
+    // Load the ad when component mounts
+    interstitial.load();
+
+    return () => {
+      unsubscribeLoaded();
+      unsubscribeClosed();
+      unsubscribeError();
+    };
+  }, []);
+
+  // Show interstitial only once when tab is first opened
+  useEffect(() => {
+    if (isFocused && isInterstitialLoaded && !hasShownAd) {
+      interstitial.show().catch(() => {});
+    }
+  }, [isFocused, isInterstitialLoaded, hasShownAd]);
+
+  // Reset hasShownAd when tab loses focus (user switches to another tab)
+  useEffect(() => {
+    if (!isFocused) {
+      setHasShownAd(false);
+    }
+  }, [isFocused]);
 
   // Sections are initialized as FALSE to be closed by default
   const [sectionsOpen, setSectionsOpen] = useState({
@@ -236,13 +316,34 @@ export default function YksNetScreen() {
       }
     }
     
-    setTytValues((prev) => ({
-      ...prev,
-      [key]: {
-        ...prev[key],
-        [field]: cleanedText,
-      },
-    }));
+    // Validate that correct + wrong doesn't exceed total question count
+    setTytValues((prev) => {
+      const updated = {
+        ...prev,
+        [key]: {
+          ...prev[key],
+          [field]: cleanedText,
+        },
+      };
+      
+      const correct = parseFloat(updated[key].correct.replace(',', '.')) || 0;
+      const wrong = parseFloat(updated[key].wrong.replace(',', '.')) || 0;
+      const maxLimit = TYT_MAX_LIMITS[key];
+      const total = correct + wrong;
+      
+      if (total > maxLimit) {
+        const subjectName = TYT_SUBJECT_NAMES[key];
+        Alert.alert(
+          'Uyarı',
+          `${subjectName} için toplam doğru ve yanlış sayısı (${total}) toplam soru sayısını (${maxLimit}) geçemez.`,
+          [{ text: 'Tamam' }]
+        );
+        // Revert to previous state
+        return prev;
+      }
+      
+      return updated;
+    });
   };
 
   const handleAytChange = (key: AYTSectionKey, field: keyof NetInputs, text: string) => {
@@ -257,13 +358,34 @@ export default function YksNetScreen() {
       }
     }
     
-    setAytValues((prev) => ({
-      ...prev,
-      [key]: {
-        ...prev[key],
-        [field]: cleanedText,
-      },
-    }));
+    // Validate that correct + wrong doesn't exceed total question count
+    setAytValues((prev) => {
+      const updated = {
+        ...prev,
+        [key]: {
+          ...prev[key],
+          [field]: cleanedText,
+        },
+      };
+      
+      const correct = parseFloat(updated[key].correct.replace(',', '.')) || 0;
+      const wrong = parseFloat(updated[key].wrong.replace(',', '.')) || 0;
+      const maxLimit = AYT_MAX_LIMITS[key];
+      const total = correct + wrong;
+      
+      if (total > maxLimit) {
+        const subjectName = AYT_SUBJECT_NAMES[key];
+        Alert.alert(
+          'Uyarı',
+          `${subjectName} için toplam doğru ve yanlış sayısı (${total}) toplam soru sayısını (${maxLimit}) geçemez.`,
+          [{ text: 'Tamam' }]
+        );
+        // Revert to previous state
+        return prev;
+      }
+      
+      return updated;
+    });
   };
 
   const handleDiplomaChange = (text: string) => {

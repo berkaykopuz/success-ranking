@@ -862,7 +862,7 @@ export default function KisiselScreen() {
                             <>
                                 <EditableSectionRow
                                     label="Türkçe"
-                                    help="40 soru"
+                                    help=""
                                     value={editedTYTValues.turkce || selectedCalculation.tytValues.turkce}
                                     onChangeCorrect={(text) => setEditedTYTValues(prev => ({
                                         ...prev,
@@ -876,7 +876,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Sosyal Bilimler"
-                                    help="20 soru"
+                                    help=""
                                     value={editedTYTValues.sosyal || selectedCalculation.tytValues.sosyal}
                                     onChangeCorrect={(text) => setEditedTYTValues(prev => ({
                                         ...prev,
@@ -890,7 +890,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Temel Matematik"
-                                    help="40 soru"
+                                    help=""
                                     value={editedTYTValues.matematik || selectedCalculation.tytValues.matematik}
                                     onChangeCorrect={(text) => setEditedTYTValues(prev => ({
                                         ...prev,
@@ -904,7 +904,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Fen Bilimleri"
-                                    help="20 soru"
+                                    help=""
                                     value={editedTYTValues.fen || selectedCalculation.tytValues.fen}
                                     onChangeCorrect={(text) => setEditedTYTValues(prev => ({
                                         ...prev,
@@ -921,22 +921,22 @@ export default function KisiselScreen() {
                             <>
                                 <ReadOnlySectionRow
                                     label="Türkçe"
-                                    help="40 soru"
+                                    help=""
                                     value={selectedCalculation.tytValues.turkce}
                                 />
                                 <ReadOnlySectionRow
                                     label="Sosyal Bilimler"
-                                    help="20 soru"
+                                    help=""
                                     value={selectedCalculation.tytValues.sosyal}
                                 />
                                 <ReadOnlySectionRow
                                     label="Temel Matematik"
-                                    help="40 soru"
+                                    help=""
                                     value={selectedCalculation.tytValues.matematik}
                                 />
                                 <ReadOnlySectionRow
                                     label="Fen Bilimleri"
-                                    help="20 soru"
+                                    help=""
                                     value={selectedCalculation.tytValues.fen}
                                 />
                             </>
@@ -1001,7 +1001,7 @@ export default function KisiselScreen() {
                             <>
                                 <EditableSectionRow
                                     label="AYT Matematik"
-                                    help="40 soru"
+                                    help=""
                                     value={editedSAYValues.aytMatematik || selectedCalculation.aytValues.aytMatematik}
                                     onChangeCorrect={(text) => setEditedSAYValues(prev => ({
                                         ...prev,
@@ -1015,7 +1015,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Fizik"
-                                    help="14 soru"
+                                    help=""
                                     value={editedSAYValues.aytFizik || selectedCalculation.aytValues.aytFizik}
                                     onChangeCorrect={(text) => setEditedSAYValues(prev => ({
                                         ...prev,
@@ -1029,7 +1029,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Kimya"
-                                    help="13 soru"
+                                    help=""
                                     value={editedSAYValues.aytKimya || selectedCalculation.aytValues.aytKimya}
                                     onChangeCorrect={(text) => setEditedSAYValues(prev => ({
                                         ...prev,
@@ -1043,7 +1043,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Biyoloji"
-                                    help="13 soru"
+                                    help=""
                                     value={editedSAYValues.aytBiyoloji || selectedCalculation.aytValues.aytBiyoloji}
                                     onChangeCorrect={(text) => setEditedSAYValues(prev => ({
                                         ...prev,
@@ -1140,7 +1140,7 @@ export default function KisiselScreen() {
                             <>
                                 <EditableSectionRow
                                     label="AYT Matematik"
-                                    help="40 soru"
+                                    help=""
                                     value={editedEAValues.aytMatematik || selectedCalculation.aytValues.aytMatematik}
                                     onChangeCorrect={(text) => setEditedEAValues(prev => ({
                                         ...prev,
@@ -1154,7 +1154,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Edebiyat"
-                                    help="24 soru"
+                                    help=""
                                     value={editedEAValues.aytEdebiyat || selectedCalculation.aytValues.aytEdebiyat}
                                     onChangeCorrect={(text) => setEditedEAValues(prev => ({
                                         ...prev,
@@ -1168,7 +1168,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Tarih-1"
-                                    help="10 soru"
+                                    help=""
                                     value={editedEAValues.aytTarih1 || selectedCalculation.aytValues.aytTarih1}
                                     onChangeCorrect={(text) => setEditedEAValues(prev => ({
                                         ...prev,
@@ -1182,7 +1182,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Coğrafya-1"
-                                    help="6 soru"
+                                    help=""
                                     value={editedEAValues.aytCografya1 || selectedCalculation.aytValues.aytCografya1}
                                     onChangeCorrect={(text) => setEditedEAValues(prev => ({
                                         ...prev,
@@ -1279,7 +1279,7 @@ export default function KisiselScreen() {
                             <>
                                 <EditableSectionRow
                                     label="Edebiyat"
-                                    help="24 soru"
+                                    help=""
                                     value={editedSOZValues.aytEdebiyat || selectedCalculation.aytValues.aytEdebiyat}
                                     onChangeCorrect={(text) => setEditedSOZValues(prev => ({
                                         ...prev,
@@ -1293,7 +1293,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Tarih-1"
-                                    help="10 soru"
+                                    help=""
                                     value={editedSOZValues.aytTarih1 || selectedCalculation.aytValues.aytTarih1}
                                     onChangeCorrect={(text) => setEditedSOZValues(prev => ({
                                         ...prev,
@@ -1307,7 +1307,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Coğrafya-1"
-                                    help="6 soru"
+                                    help=""
                                     value={editedSOZValues.aytCografya1 || selectedCalculation.aytValues.aytCografya1}
                                     onChangeCorrect={(text) => setEditedSOZValues(prev => ({
                                         ...prev,
@@ -1321,7 +1321,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Tarih-2"
-                                    help="11 soru"
+                                    help=""
                                     value={editedSOZValues.aytTarih2 || selectedCalculation.aytValues.aytTarih2}
                                     onChangeCorrect={(text) => setEditedSOZValues(prev => ({
                                         ...prev,
@@ -1335,7 +1335,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Coğrafya-2"
-                                    help="11 soru"
+                                    help=""
                                     value={editedSOZValues.aytCografya2 || selectedCalculation.aytValues.aytCografya2}
                                     onChangeCorrect={(text) => setEditedSOZValues(prev => ({
                                         ...prev,
@@ -1349,7 +1349,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Felsefe Grubu"
-                                    help="12 soru"
+                                    help=""
                                     value={editedSOZValues.aytFelsefe || selectedCalculation.aytValues.aytFelsefe}
                                     onChangeCorrect={(text) => setEditedSOZValues(prev => ({
                                         ...prev,
@@ -1363,7 +1363,7 @@ export default function KisiselScreen() {
                                 />
                                 <EditableSectionRow
                                     label="Din Kültürü"
-                                    help="6 soru"
+                                    help=""
                                     value={editedSOZValues.aytDin || selectedCalculation.aytValues.aytDin}
                                     onChangeCorrect={(text) => setEditedSOZValues(prev => ({
                                         ...prev,
@@ -1478,7 +1478,7 @@ export default function KisiselScreen() {
                             {isEditingDIL ? (
                                 <EditableSectionRow
                                     label="YDT (Yabancı Dil Testi)"
-                                    help="80 soru"
+                                    help=""
                                     value={editedDILValues.aytYdt || selectedCalculation.aytValues.aytYdt}
                                     onChangeCorrect={(text) => setEditedDILValues(prev => ({
                                         ...prev,
@@ -1493,7 +1493,7 @@ export default function KisiselScreen() {
                             ) : (
                                 <ReadOnlySectionRow
                                     label="YDT (Yabancı Dil Testi)"
-                                    help="80 soru"
+                                    help=""
                                     value={selectedCalculation.aytValues.aytYdt}
                                 />
                             )}
@@ -2294,11 +2294,11 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
         maxNets = [40, 40, 20, 20];
         maxDisplayValue = 40;
     } else if (type === 'say') {
-        subjects = ['AYT Mat', 'Fizik', 'Kimya', 'Biyoloji'];
+        subjects = ['AYT Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
         maxNets = [40, 14, 13, 13];
         maxDisplayValue = 40;
     } else if (type === 'ea') {
-        subjects = ['AYT Mat', 'Edebiyat', 'Tarih-1', 'Coğrafya-1'];
+        subjects = ['AYT Matematik', 'Edebiyat', 'Tarih-1', 'Coğrafya-1'];
         maxNets = [40, 24, 10, 6];
         maxDisplayValue = 40;
     } else if (type === 'soz') {
@@ -3128,6 +3128,23 @@ function EditableSectionRow({ label, help, value, onChangeCorrect, onChangeWrong
                 cleanedText = maxLimit.toString();
             }
         }
+        
+        // Validate that correct + wrong doesn't exceed total question count
+        if (maxLimit) {
+            const correct = parseFloat(cleanedText.replace(',', '.')) || 0;
+            const wrong = parseFloat(value.wrong.replace(',', '.')) || 0;
+            const total = correct + wrong;
+            
+            if (total > maxLimit) {
+                Alert.alert(
+                    'Uyarı',
+                    `${label} için toplam doğru ve yanlış sayısı (${total}) toplam soru sayısını (${maxLimit}) geçemez.`,
+                    [{ text: 'Tamam' }]
+                );
+                return; // Don't update if validation fails
+            }
+        }
+        
         onChangeCorrect(cleanedText);
     };
 
@@ -3139,6 +3156,23 @@ function EditableSectionRow({ label, help, value, onChangeCorrect, onChangeWrong
                 cleanedText = maxLimit.toString();
             }
         }
+        
+        // Validate that correct + wrong doesn't exceed total question count
+        if (maxLimit) {
+            const correct = parseFloat(value.correct.replace(',', '.')) || 0;
+            const wrong = parseFloat(cleanedText.replace(',', '.')) || 0;
+            const total = correct + wrong;
+            
+            if (total > maxLimit) {
+                Alert.alert(
+                    'Uyarı',
+                    `${label} için toplam doğru ve yanlış sayısı (${total}) toplam soru sayısını (${maxLimit}) geçemez.`,
+                    [{ text: 'Tamam' }]
+                );
+                return; // Don't update if validation fails
+            }
+        }
+        
         onChangeWrong(cleanedText);
     };
 
