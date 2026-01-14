@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "success-ranking",
+    "name": "YKS Sıralamam",
     "slug": "success-ranking",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -29,7 +29,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon.png",
+          "image": "./assets/images/icons/icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",

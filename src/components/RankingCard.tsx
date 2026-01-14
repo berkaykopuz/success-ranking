@@ -107,7 +107,7 @@ export const RankingCard = React.memo(({ item, router }: Props) => {
                 </View>
                 <View className="items-center flex-1">
                     <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">Kontenjan</Text>
-                    <Text className="text-sm font-semibold text-slate-700">{item.yerlesen}</Text>
+                    <Text className="text-sm font-semibold text-slate-700">{item.quota}</Text>
                 </View>
                 <View className="items-center flex-1 border-l border-slate-200">
                     <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">Puan</Text>

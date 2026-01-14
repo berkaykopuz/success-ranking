@@ -224,7 +224,7 @@ const calculateDILHamPuan = (
 // Interstitial ad configuration
 const INTERSTITIAL_AD_UNIT_ID = __DEV__
   ? TestIds.INTERSTITIAL
-  : 'ca-app-pub-7326975715449797/6012293782';
+  : 'ca-app-pub-7326975715449797/6395081945';
 
 const interstitial = InterstitialAd.createForAdRequest(INTERSTITIAL_AD_UNIT_ID, {
   requestNonPersonalizedAdsOnly: true,
@@ -241,7 +241,7 @@ export default function YksNetScreen() {
   const [isSaveModalVisible, setIsSaveModalVisible] = useState(false);
   const [calculationName, setCalculationName] = useState('');
   const [isInterstitialLoaded, setIsInterstitialLoaded] = useState(false);
-  const [hasShownAd, setHasShownAd] = useState(false);
+  const [lastAdShownAt, setLastAdShownAt] = useState<number | null>(null);
 
   // Load interstitial ad for this screen
   useEffect(() => {
@@ -251,7 +251,8 @@ export default function YksNetScreen() {
 
     const unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
       setIsInterstitialLoaded(false);
-      setHasShownAd(true); // Mark that we've shown the ad
+      // Record when the ad was last shown and closed
+      setLastAdShownAt(Date.now());
       // Reload the ad after it's closed so it's ready for the next time
       interstitial.load();
     });
@@ -272,19 +273,17 @@ export default function YksNetScreen() {
     };
   }, []);
 
-  // Show interstitial only once when tab is first opened
+  // Show interstitial when tab is focused, but at most once every 2 minutes
   useEffect(() => {
-    if (isFocused && isInterstitialLoaded && !hasShownAd) {
-      interstitial.show().catch(() => {});
-    }
-  }, [isFocused, isInterstitialLoaded, hasShownAd]);
+    if (isFocused && isInterstitialLoaded) {
+      const now = Date.now();
+      const TWO_MINUTES_MS = 2 * 60 * 1000;
 
-  // Reset hasShownAd when tab loses focus (user switches to another tab)
-  useEffect(() => {
-    if (!isFocused) {
-      setHasShownAd(false);
+      if (!lastAdShownAt || now - lastAdShownAt >= TWO_MINUTES_MS) {
+        interstitial.show().catch(() => {});
+      }
     }
-  }, [isFocused]);
+  }, [isFocused, isInterstitialLoaded, lastAdShownAt]);
 
   // Sections are initialized as FALSE to be closed by default
   const [sectionsOpen, setSectionsOpen] = useState({

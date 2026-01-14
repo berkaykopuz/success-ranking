@@ -13,6 +13,7 @@ import {
     ScrollView,
     Dimensions,
 } from 'react-native';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { RankingCard } from '../../src/components/RankingCard';
@@ -20,6 +21,10 @@ import { useUserStore, PersonalList, YKSCalculation } from '../../src/store/user
 import { RankingItem } from '../../src/types/ranking';
 import { useRouter } from 'expo-router';
 import { estimateRanking } from '../../src/api/rankings';
+
+const BANNER_AD_UNIT_ID = __DEV__
+    ? TestIds.BANNER
+    : 'ca-app-pub-7326975715449797/6012293782';
 
 type ViewMode = 'main' | 'lists' | 'listDetail' | 'pastScores' | 'calculationDetail' | 'netFormStatus';
 
@@ -2049,11 +2054,22 @@ export default function KisiselScreen() {
                     Kişisel
                 </Text>
             </View>
-            <MainMenuScreen 
-                onOpenPastScores={handleOpenPastScores}
-                onOpenLists={handleOpenLists}
-                onOpenNetFormStatus={handleOpenNetFormStatus}
-            />
+            <View className="flex-1 bg-slate-50 pt-0">
+                <MainMenuScreen
+                    onOpenPastScores={handleOpenPastScores}
+                    onOpenLists={handleOpenLists}
+                    onOpenNetFormStatus={handleOpenNetFormStatus}
+                />
+            </View>
+            <View className="bg-white border-t border-slate-200 items-center">
+                <BannerAd
+                    unitId={BANNER_AD_UNIT_ID}
+                    size={BannerAdSize.BANNER}
+                    requestOptions={{
+                        requestNonPersonalizedAdsOnly: true,
+                    }}
+                />
+            </View>
         </View>
     );
 }
@@ -2068,6 +2084,7 @@ interface NetFormStatusScreenProps {
 function NetFormStatusScreen({ insets, onBack, calculations }: NetFormStatusScreenProps) {
     // Get last 5 calculations
     const last5Calculations = calculations ? calculations.slice(0, 5) : [];
+    const [netFormMode, setNetFormMode] = useState<'ders' | 'puan'>('ders');
 
     return (
         <View className="flex-1 bg-slate-50" style={{ paddingTop: insets.top }}>
@@ -2091,6 +2108,31 @@ function NetFormStatusScreen({ insets, onBack, calculations }: NetFormStatusScre
                 </View>
             </View>
 
+            {last5Calculations.length > 0 && (
+                <View className="px-5 py-2 bg-white border-b border-slate-100 items-center">
+                    <View className="bg-slate-100 rounded-full p-1 flex-row w-64 justify-between">
+                        <TouchableOpacity
+                            className={`flex-1 rounded-full py-1.5 items-center ${netFormMode === 'ders' ? 'bg-slate-900' : ''}`}
+                            activeOpacity={0.8}
+                            onPress={() => setNetFormMode('ders')}
+                        >
+                            <Text className={`text-xs font-semibold ${netFormMode === 'ders' ? 'text-white' : 'text-slate-600'}`}>
+                                Ders Bazında
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            className={`flex-1 rounded-full py-1.5 items-center ${netFormMode === 'puan' ? 'bg-slate-900' : ''}`}
+                            activeOpacity={0.8}
+                            onPress={() => setNetFormMode('puan')}
+                        >
+                            <Text className={`text-xs font-semibold ${netFormMode === 'puan' ? 'text-white' : 'text-slate-600'}`}>
+                                Puan Bazında
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+
             {last5Calculations.length === 0 ? (
                 <View className="flex-1 justify-center items-center mt-20 px-10">
                     <View className="bg-slate-100 p-6 rounded-full mb-6 shadow-sm">
@@ -2108,60 +2150,121 @@ function NetFormStatusScreen({ insets, onBack, calculations }: NetFormStatusScre
                     className="flex-1 bg-slate-50 pt-2"
                     contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
                 >
-                    {/* TYT Chart */}
-                    <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
-                        <View className="flex-row items-center mb-4">
-                            <View className="bg-blue-50 px-2.5 py-1 rounded-md mr-2">
-                                <Text className="text-blue-700 font-bold text-[10px] tracking-wider uppercase">TYT</Text>
+                    {netFormMode === 'ders' ? (
+                        <>
+                            {/* TYT Chart - Ders Bazında */}
+                            <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                                <View className="flex-row items-center mb-4">
+                                    <View className="bg-blue-50 px-2.5 py-1 rounded-md mr-2">
+                                        <Text className="text-blue-700 font-bold text-[10px] tracking-wider uppercase">TYT</Text>
+                                    </View>
+                                    <Text className="text-lg font-bold text-slate-800">TYT Net Karşılaştırması (Ders)</Text>
+                                </View>
+                                <ComparisonChart calculations={last5Calculations} type="tyt" />
                             </View>
-                            <Text className="text-lg font-bold text-slate-800">TYT Net Karşılaştırması</Text>
-                        </View>
-                        <ComparisonChart calculations={last5Calculations} type="tyt" />
-                    </View>
 
-                    {/* SAY Chart */}
-                    <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
-                        <View className="flex-row items-center mb-4">
-                            <View className="bg-emerald-50 px-2.5 py-1 rounded-md mr-2">
-                                <Text className="text-emerald-700 font-bold text-[10px] tracking-wider uppercase">SAY</Text>
+                            {/* SAY Chart - Ders Bazında */}
+                            <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                                <View className="flex-row items-center mb-4">
+                                    <View className="bg-emerald-50 px-2.5 py-1 rounded-md mr-2">
+                                        <Text className="text-emerald-700 font-bold text-[10px] tracking-wider uppercase">SAY</Text>
+                                    </View>
+                                    <Text className="text-lg font-bold text-slate-800">SAY Net Karşılaştırması (Ders)</Text>
+                                </View>
+                                <ComparisonChart calculations={last5Calculations} type="say" />
                             </View>
-                            <Text className="text-lg font-bold text-slate-800">SAY Net Karşılaştırması</Text>
-                        </View>
-                        <ComparisonChart calculations={last5Calculations} type="say" />
-                    </View>
 
-                    {/* EA Chart */}
-                    <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
-                        <View className="flex-row items-center mb-4">
-                            <View className="bg-purple-50 px-2.5 py-1 rounded-md mr-2">
-                                <Text className="text-purple-700 font-bold text-[10px] tracking-wider uppercase">EA</Text>
+                            {/* EA Chart - Ders Bazında */}
+                            <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                                <View className="flex-row items-center mb-4">
+                                    <View className="bg-purple-50 px-2.5 py-1 rounded-md mr-2">
+                                        <Text className="text-purple-700 font-bold text-[10px] tracking-wider uppercase">EA</Text>
+                                    </View>
+                                    <Text className="text-lg font-bold text-slate-800">EA Net Karşılaştırması (Ders)</Text>
+                                </View>
+                                <ComparisonChart calculations={last5Calculations} type="ea" />
                             </View>
-                            <Text className="text-lg font-bold text-slate-800">EA Net Karşılaştırması</Text>
-                        </View>
-                        <ComparisonChart calculations={last5Calculations} type="ea" />
-                    </View>
 
-                    {/* SÖZ Chart */}
-                    <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
-                        <View className="flex-row items-center mb-4">
-                            <View className="bg-orange-50 px-2.5 py-1 rounded-md mr-2">
-                                <Text className="text-orange-700 font-bold text-[10px] tracking-wider uppercase">SÖZ</Text>
+                            {/* SÖZ Chart - Ders Bazında */}
+                            <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                                <View className="flex-row items-center mb-4">
+                                    <View className="bg-orange-50 px-2.5 py-1 rounded-md mr-2">
+                                        <Text className="text-orange-700 font-bold text-[10px] tracking-wider uppercase">SÖZ</Text>
+                                    </View>
+                                    <Text className="text-lg font-bold text-slate-800">SÖZ Net Karşılaştırması (Ders)</Text>
+                                </View>
+                                <ComparisonChart calculations={last5Calculations} type="soz" />
                             </View>
-                            <Text className="text-lg font-bold text-slate-800">SÖZ Net Karşılaştırması</Text>
-                        </View>
-                        <ComparisonChart calculations={last5Calculations} type="soz" />
-                    </View>
 
-                    {/* DİL Chart */}
-                    <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
-                        <View className="flex-row items-center mb-4">
-                            <View className="bg-rose-50 px-2.5 py-1 rounded-md mr-2">
-                                <Text className="text-rose-700 font-bold text-[10px] tracking-wider uppercase">DİL</Text>
+                            {/* DİL Chart - Ders Bazında */}
+                            <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                                <View className="flex-row items-center mb-4">
+                                    <View className="bg-rose-50 px-2.5 py-1 rounded-md mr-2">
+                                        <Text className="text-rose-700 font-bold text-[10px] tracking-wider uppercase">DİL</Text>
+                                    </View>
+                                    <Text className="text-lg font-bold text-slate-800">DİL Net Karşılaştırması (Ders)</Text>
+                                </View>
+                                <ComparisonChart calculations={last5Calculations} type="dil" />
                             </View>
-                            <Text className="text-lg font-bold text-slate-800">DİL Net Karşılaştırması</Text>
-                        </View>
-                        <ComparisonChart calculations={last5Calculations} type="dil" />
-                    </View>
+                        </>
+                    ) : (
+                        <>
+                            {/* TYT Chart - Puan Bazında */}
+                            <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                                <View className="flex-row items-center mb-4">
+                                    <View className="bg-blue-50 px-2.5 py-1 rounded-md mr-2">
+                                        <Text className="text-blue-700 font-bold text-[10px] tracking-wider uppercase">TYT</Text>
+                                    </View>
+                                    <Text className="text-lg font-bold text-slate-800">TYT Puan Karşılaştırması</Text>
+                                </View>
+                                <ScoreComparisonChart calculations={last5Calculations} type="tyt" />
+                            </View>
+
+                            {/* SAY Chart - Puan Bazında */}
+                            <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                                <View className="flex-row items-center mb-4">
+                                    <View className="bg-emerald-50 px-2.5 py-1 rounded-md mr-2">
+                                        <Text className="text-emerald-700 font-bold text-[10px] tracking-wider uppercase">SAY</Text>
+                                    </View>
+                                    <Text className="text-lg font-bold text-slate-800">SAY Puan Karşılaştırması</Text>
+                                </View>
+                                <ScoreComparisonChart calculations={last5Calculations} type="say" />
+                            </View>
+
+                            {/* EA Chart - Puan Bazında */}
+                            <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                                <View className="flex-row items-center mb-4">
+                                    <View className="bg-purple-50 px-2.5 py-1 rounded-md mr-2">
+                                        <Text className="text-purple-700 font-bold text-[10px] tracking-wider uppercase">EA</Text>
+                                    </View>
+                                    <Text className="text-lg font-bold text-slate-800">EA Puan Karşılaştırması</Text>
+                                </View>
+                                <ScoreComparisonChart calculations={last5Calculations} type="ea" />
+                            </View>
+
+                            {/* SÖZ Chart - Puan Bazında */}
+                            <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                                <View className="flex-row items-center mb-4">
+                                    <View className="bg-orange-50 px-2.5 py-1 rounded-md mr-2">
+                                        <Text className="text-orange-700 font-bold text-[10px] tracking-wider uppercase">SÖZ</Text>
+                                    </View>
+                                    <Text className="text-lg font-bold text-slate-800">SÖZ Puan Karşılaştırması</Text>
+                                </View>
+                                <ScoreComparisonChart calculations={last5Calculations} type="soz" />
+                            </View>
+
+                            {/* DİL Chart - Puan Bazında */}
+                            <View className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4">
+                                <View className="flex-row items-center mb-4">
+                                    <View className="bg-rose-50 px-2.5 py-1 rounded-md mr-2">
+                                        <Text className="text-rose-700 font-bold text-[10px] tracking-wider uppercase">DİL</Text>
+                                    </View>
+                                    <Text className="text-lg font-bold text-slate-800">DİL Puan Karşılaştırması</Text>
+                                </View>
+                                <ScoreComparisonChart calculations={last5Calculations} type="dil" />
+                            </View>
+                        </>
+                    )}
                 </ScrollView>
             )}
         </View>
@@ -2287,28 +2390,23 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
     // Define subjects and max values based on type
     let subjects: string[] = [];
     let maxNets: number[] = [];
-    let maxDisplayValue = 40;
+    let maxDisplayValue = 100; // We will display success rate (0-100%) on Y-axis
 
     if (type === 'tyt') {
-        subjects = ['Türkçe', 'Matematik', 'Sosyal', 'Fen'];
-        maxNets = [40, 40, 20, 20];
-        maxDisplayValue = 40;
+        subjects = ['Türkçe', 'Sosyal', 'Matematik', 'Fen'];
+        maxNets = [40, 20, 40, 20];
     } else if (type === 'say') {
         subjects = ['AYT Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
         maxNets = [40, 14, 13, 13];
-        maxDisplayValue = 40;
     } else if (type === 'ea') {
         subjects = ['AYT Matematik', 'Edebiyat', 'Tarih-1', 'Coğrafya-1'];
         maxNets = [40, 24, 10, 6];
-        maxDisplayValue = 40;
     } else if (type === 'soz') {
         subjects = ['Edebiyat', 'Tarih-1', 'Coğ-1', 'Tarih-2', 'Coğ-2', 'Felsefe', 'Din'];
         maxNets = [24, 10, 6, 11, 11, 12, 6];
-        maxDisplayValue = 24;
     } else if (type === 'dil') {
         subjects = ['YDT'];
         maxNets = [80];
-        maxDisplayValue = 80;
     }
 
     // Calculate Y-axis labels
@@ -2325,8 +2423,8 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
         if (type === 'tyt') {
             nets = [
                 getNetFromValue(calc.tytValues.turkce),
-                getNetFromValue(calc.tytValues.matematik),
                 getNetFromValue(calc.tytValues.sosyal),
+                getNetFromValue(calc.tytValues.matematik),
                 getNetFromValue(calc.tytValues.fen),
             ];
         } else if (type === 'say') {
@@ -2357,12 +2455,18 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
             const ydtNet = calc.aytValues.aytYdt ? getNetFromValue(calc.aytValues.aytYdt) : 0;
             nets = [ydtNet];
         }
+
+        // Calculate success rates (percentage) for each subject
+        const successRates = nets.map((net, index) => {
+            const maxNet = maxNets[index] || 1;
+            return (net / maxNet) * 100;
+        });
         
-        // Calculate point positions
-        const points = nets.map((net, index) => {
+        // Calculate point positions based on success rate
+        const points = successRates.map((rate, index) => {
             const x = paddingLeft + (graphWidth / (subjects.length - 1 || 1)) * index;
-            const y = paddingTop + graphHeight - (net / maxDisplayValue) * graphHeight;
-            return { x, y, net, subjectIndex: index };
+            const y = paddingTop + graphHeight - (rate / maxDisplayValue) * graphHeight;
+            return { x, y, net: nets[index], successRate: rate, subjectIndex: index };
         });
 
         return {
@@ -2373,6 +2477,7 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
             calculation: calc,
             subjects: subjects,
             nets: nets,
+            successRates,
         };
     });
 
@@ -2457,7 +2562,7 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
                             }}
                         >
                             <Text className="text-[10px] text-slate-500 font-medium">
-                                {value.toFixed(0)}
+                                {value.toFixed(0)}%
                             </Text>
                         </View>
                     );
@@ -2553,6 +2658,7 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
                     const subjectIndex = selectedDot.pointIndex;
                     const subject = series.subjects[subjectIndex];
                     const net = series.nets[subjectIndex];
+                    const successRate = series.successRates[subjectIndex];
                     const tooltipWidth = 200;
                     const tooltipLeft = Math.max(10, Math.min(point.x - tooltipWidth / 2, chartWidth - tooltipWidth - 10));
                     // Position tooltip above the dot, or below if not enough space
@@ -2583,9 +2689,14 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
                                     <Text className="text-sm text-slate-600 flex-1">
                                         {subject}
                                     </Text>
-                                    <Text className="text-sm font-semibold text-slate-800 ml-2">
-                                        {net.toFixed(2)}
-                                    </Text>
+                                    <View className="items-end ml-2">
+                                        <Text className="text-sm font-semibold text-slate-800">
+                                            {net.toFixed(2)} net
+                                        </Text>
+                                        <Text className="text-[11px] text-slate-500">
+                                            {successRate.toFixed(0)}%
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
                         </Pressable>
@@ -2654,6 +2765,303 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
                     })}
                 </View>
             </View>
+        </View>
+    );
+}
+
+// Score-based comparison chart (Puan Bazında)
+interface ScoreComparisonChartProps {
+    calculations: YKSCalculation[];
+    type: 'tyt' | 'say' | 'ea' | 'soz' | 'dil';
+}
+
+function ScoreComparisonChart({ calculations, type }: ScoreComparisonChartProps) {
+    const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+    // Prepare score data for last calculations (already sliced before)
+    // For score charts, we want exams ordered from oldest (left) to newest (right)
+    const orderedCalculations = [...calculations].reverse();
+
+    const scoreData = orderedCalculations.map((calc) => {
+        let score = 0;
+
+        if (type === 'tyt') {
+            score = calc.tytYerlesme;
+        } else if (type === 'say') {
+            score = calc.sayYerlesme;
+        } else if (type === 'ea') {
+            score = calc.eaYerlesme;
+        } else if (type === 'soz') {
+            score = calc.sozYerlesme;
+        } else if (type === 'dil') {
+            score = calc.dilYerlesme ?? 0;
+        }
+
+        return {
+            name: calc.name,
+            date: new Date(calc.createdAt),
+            score,
+        };
+    }).filter((item) => item.score > 0);
+
+    if (scoreData.length === 0) {
+        return (
+            <View className="py-8 items-center">
+                <View className="bg-slate-100 p-4 rounded-full mb-3">
+                    <BarChart3 size={32} color="#94a3b8" />
+                </View>
+                <Text className="text-sm text-slate-400">
+                    Bu Alan İçin Henüz Puan Kaydı Bulunmuyor
+                </Text>
+            </View>
+        );
+    }
+
+    const screenWidth = Dimensions.get('window').width;
+    const chartWidth = screenWidth - 80;
+    const chartHeight = 260;
+    const paddingLeft = 50;
+    const paddingRight = 20;
+    const paddingTop = 20;
+    const paddingBottom = 60;
+    const graphWidth = chartWidth - paddingLeft - paddingRight;
+    const graphHeight = chartHeight - paddingTop - paddingBottom;
+
+    const maxScore = Math.max(...scoreData.map((d) => d.score), 1);
+    const maxDisplayValue = Math.ceil(maxScore / 10) * 10;
+
+    const yAxisSteps = 5;
+    const yAxisLabels: number[] = [];
+    for (let i = 0; i <= yAxisSteps; i++) {
+        yAxisLabels.push((maxDisplayValue / yAxisSteps) * i);
+    }
+
+    const points = scoreData.map((item, index) => {
+        const x = paddingLeft + (graphWidth / (scoreData.length - 1 || 1)) * index;
+        const y = paddingTop + graphHeight - (item.score / maxDisplayValue) * graphHeight;
+        return { x, y, ...item };
+    });
+
+    const primaryColor =
+        type === 'tyt'
+            ? '#3b82f6'
+            : type === 'say'
+            ? '#10b981'
+            : type === 'ea'
+            ? '#8b5cf6'
+            : type === 'soz'
+            ? '#f97316'
+            : '#fb7185';
+
+    return (
+        <View>
+            <Pressable
+                className="relative"
+                style={{ height: chartHeight }}
+                onPress={() => setSelectedIndex(null)}
+            >
+                {/* Y-Axis */}
+                <View
+                    className="absolute bg-slate-300"
+                    style={{
+                        left: paddingLeft,
+                        top: paddingTop,
+                        width: 1,
+                        height: graphHeight,
+                    }}
+                />
+
+                {/* Y-Axis Labels */}
+                {yAxisLabels.map((value, index) => {
+                    const y = paddingTop + graphHeight - (value / maxDisplayValue) * graphHeight;
+                    return (
+                        <View
+                            key={`score-ylabel-${index}`}
+                            className="absolute"
+                            style={{
+                                left: 0,
+                                top: y - 8,
+                                width: paddingLeft - 5,
+                                alignItems: 'flex-end',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Text className="text-[10px] text-slate-500 font-medium">
+                                {value.toFixed(0)}
+                            </Text>
+                        </View>
+                    );
+                })}
+
+                {/* Grid Lines */}
+                {yAxisLabels.map((value, index) => {
+                    const y = paddingTop + graphHeight - (value / maxDisplayValue) * graphHeight;
+                    return (
+                        <View
+                            key={`score-grid-${index}`}
+                            className="absolute bg-slate-100"
+                            style={{
+                                left: paddingLeft,
+                                top: y,
+                                width: graphWidth,
+                                height: 1,
+                            }}
+                        />
+                    );
+                })}
+
+                {/* X-Axis */}
+                <View
+                    className="absolute bg-slate-300"
+                    style={{
+                        left: paddingLeft,
+                        top: paddingTop + graphHeight,
+                        width: graphWidth,
+                        height: 1,
+                    }}
+                />
+
+                {/* Line */}
+                {points.map((point, index) => {
+                    if (index === 0) return null;
+                    const prev = points[index - 1];
+                    const dx = point.x - prev.x;
+                    const dy = point.y - prev.y;
+                    const length = Math.sqrt(dx * dx + dy * dy);
+                    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+                    const centerX = (point.x + prev.x) / 2;
+                    const centerY = (point.y + prev.y) / 2;
+
+                    return (
+                        <View
+                            key={`score-line-${index}`}
+                            className="absolute"
+                            style={{
+                                left: centerX - length / 2,
+                                top: centerY - 1,
+                                width: length,
+                                height: 2.5,
+                                backgroundColor: primaryColor,
+                                transform: [{ rotate: `${angle}deg` }],
+                            }}
+                        />
+                    );
+                })}
+
+                {/* Points */}
+                {points.map((point, index) => {
+                    const isSelected = selectedIndex === index;
+                    return (
+                        <TouchableOpacity
+                            key={`score-point-${index}`}
+                            className="absolute"
+                            style={{
+                                left: point.x - 8,
+                                top: point.y - 8,
+                                width: 16,
+                                height: 16,
+                                borderRadius: 8,
+                                backgroundColor: primaryColor,
+                                borderWidth: 2,
+                                borderColor: '#ffffff',
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 1 },
+                                shadowOpacity: 0.2,
+                                shadowRadius: 2,
+                                elevation: 2,
+                                zIndex: 10,
+                                opacity: isSelected ? 1 : 0.9,
+                            }}
+                            onPress={(e) => {
+                                e.stopPropagation();
+                                Haptics.selectionAsync();
+                                setSelectedIndex(isSelected ? null : index);
+                            }}
+                            activeOpacity={0.7}
+                        />
+                    );
+                })}
+
+                {/* Tooltip */}
+                {selectedIndex !== null && (() => {
+                    const point = points[selectedIndex];
+                    const tooltipWidth = 220;
+                    const tooltipLeft = Math.max(
+                        10,
+                        Math.min(point.x - tooltipWidth / 2, chartWidth - tooltipWidth - 10)
+                    );
+                    const tooltipHeight = 90;
+                    const tooltipTop =
+                        point.y - tooltipHeight - 10 < paddingTop
+                            ? point.y + 20
+                            : point.y - tooltipHeight - 10;
+
+                    const formattedDate = point.date.toLocaleDateString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                    });
+
+                    return (
+                        <Pressable
+                            className="absolute bg-white rounded-xl shadow-lg border border-slate-200 p-3"
+                            style={{
+                                left: tooltipLeft,
+                                top: tooltipTop,
+                                width: tooltipWidth,
+                                zIndex: 100,
+                            }}
+                            onPress={(e) => {
+                                e.stopPropagation();
+                                setSelectedIndex(null);
+                            }}
+                        >
+                            <Text className="text-base font-bold text-slate-800 mb-1" numberOfLines={1}>
+                                {point.name}
+                            </Text>
+                            <Text className="text-xs text-slate-500 mb-2">
+                                {formattedDate}
+                            </Text>
+                            <View className="border-t border-slate-100 pt-2">
+                                <View className="flex-row justify-between items-center">
+                                    <Text className="text-sm text-slate-600 flex-1">
+                                        Toplam Puan
+                                    </Text>
+                                    <Text className="text-sm font-semibold text-slate-800 ml-2">
+                                        {point.score.toFixed(3)}
+                                    </Text>
+                                </View>
+                            </View>
+                        </Pressable>
+                    );
+                })()}
+
+                {/* X-Axis Labels */}
+                {points.map((point, index) => {
+                    const formattedDate = point.date.toLocaleDateString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                    });
+                    return (
+                        <View
+                            key={`score-xlabel-${index}`}
+                            className="absolute"
+                            style={{
+                                left: point.x - 35,
+                                top: paddingTop + graphHeight + 10,
+                                width: 70,
+                                alignItems: 'center',
+                            }}
+                        >
+                            <Text
+                                className="text-[9px] text-slate-600 font-medium text-center"
+                                numberOfLines={1}
+                            >
+                                {formattedDate}
+                            </Text>
+                        </View>
+                    );
+                })}
+            </Pressable>
         </View>
     );
 }

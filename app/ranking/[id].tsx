@@ -144,37 +144,13 @@ export default function RankingDetailScreen() {
                                     {h.rank !== null ? `${h.rank.toLocaleString('tr-TR')}` : 'N/A'}
                                 </Text>
                                 <Text className="flex-1 text-slate-700 text-sm font-medium text-center">
-                                    {h.kontenjan}/{h.yerlesen}
+                                    {h.yerlesen}/{h.kontenjan}
                                 </Text>
                             </View>
                         ))}
                     </View>
                 </View>
 
-                {/* Contact/About */}
-                <View className="px-4 mt-8">
-                    <Text className="text-lg font-bold text-slate-800 mb-3 px-1">Hakkında</Text>
-                    <View className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                        {data.description && <Text className="text-slate-600 leading-relaxed mb-5">{data.description}</Text>}
-
-                        {data.website && (
-                            <View className="flex-row items-center mb-3">
-                                <View className="w-8 h-8 rounded-full bg-blue-50 items-center justify-center mr-3">
-                                    <Globe size={16} color="#2563EB" />
-                                </View>
-                                <Text className="text-blue-600 font-medium">{data.website}</Text>
-                            </View>
-                        )}
-                        {data.contactEmail && (
-                            <View className="flex-row items-center">
-                                <View className="w-8 h-8 rounded-full bg-slate-100 items-center justify-center mr-3">
-                                    <Mail size={16} color="#64748B" />
-                                </View>
-                                <Text className="text-slate-700 font-medium">{data.contactEmail}</Text>
-                            </View>
-                        )}
-                    </View>
-                </View>
             </ScrollView>
 
             <ListModal
