@@ -12,25 +12,14 @@ interface FilterModalProps {
 }
 
 const LANGUAGES = [
-    'Türkçe',
-    'Almanca',
-    'Arapça',
-    'Bulgarca',
-    'Çince',
-    'Ermenice',
-    'Fransızca',
-    'İngilizce',
-    'İspanyolca',
-    'İtalyanca',
-    'Korece',
-    'Lehçe',
-    'Rusça'
+    'Türkçe', 'Almanca', 'Arapça', 'Bulgarca', 'Çince', 'Ermenice',
+    'Fransızca', 'İngilizce', 'İspanyolca', 'İtalyanca', 'Korece', 'Lehçe', 'Rusça'
 ];
 
 export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) => {
     const {
         minScore, maxScore, minRank, maxRank, sortBy, sortOrder, city, university, department, quotaType, language,
-        selectedYksCalculationId, setFilter, resetFilters
+        selectedYksCalculationId, setFilter
     } = useFilterStore();
     const { getYKSCalculations } = useUserStore();
     const yksCalculations = getYKSCalculations();
@@ -70,14 +59,11 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
 
     useEffect(() => {
         if (visible) {
-            // Update slider positions from store only if store has actual filter values
-            // Otherwise, use the last slider positions we had
             const newMinScore = minScore !== null ? minScore : lastSliderPositions.current.minScore;
             const newMaxScore = maxScore !== null ? maxScore : lastSliderPositions.current.maxScore;
             const newMinRank = minRank !== null ? minRank : lastSliderPositions.current.minRank;
             const newMaxRank = maxRank !== null ? maxRank : lastSliderPositions.current.maxRank;
 
-            // Update the ref with current positions
             lastSliderPositions.current = {
                 minScore: newMinScore,
                 maxScore: newMaxScore,
@@ -103,7 +89,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
     }, [visible, minScore, maxScore, minRank, maxRank, sortBy, sortOrder, city, university, department, quotaType, language, selectedYksCalculationId]);
 
     const handleApply = () => {
-        // Only set to null if the full range is selected (no filter applied)
         const isScoreFullRange = localFilters.minScore === SCORE_MIN && localFilters.maxScore === SCORE_MAX;
         const isRankFullRange = localFilters.minRank === RANK_MIN && localFilters.maxRank === RANK_MAX;
         
@@ -123,7 +108,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
     };
 
     const handleClear = () => {
-        // Reset slider positions ref
         lastSliderPositions.current = {
             minScore: SCORE_MIN,
             maxScore: SCORE_MAX,
@@ -131,7 +115,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
             maxRank: RANK_MAX,
         };
 
-        // Reset local state
         setLocalFilters({
             minScore: SCORE_MIN,
             maxScore: SCORE_MAX,
@@ -147,7 +130,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
             selectedYksCalculationId: null
         });
 
-        // Reset store
         setFilter('minScore', null);
         setFilter('maxScore', null);
         setFilter('minRank', null);
@@ -202,16 +184,11 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                             {/* YKS Calculation Section */}
                             <View className="pt-6 pb-6 border-b border-slate-100">
                                 <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">NET GEÇMİŞİ</Text>
-                                <View className="relative z-10">
+                                {/* Trigger button – actual list is rendered in a separate Modal so it can overlay everything */}
+                                <View>
                                     <TouchableOpacity
                                         onPress={() => setIsYksDropdownOpen(!isYksDropdownOpen)}
-                                        className={`bg-slate-50 border border-slate-200 px-5 py-4 flex-row items-center justify-between ${
-                                            isYksDropdownOpen ? 'rounded-t-xl' : 'rounded-xl'
-                                        }`}
-                                        style={isYksDropdownOpen ? {
-                                            borderBottomWidth: 1,
-                                            borderBottomColor: '#cbd5e1',
-                                        } : {}}
+                                        className="bg-slate-50 border border-slate-200 px-5 py-4 flex-row items-center justify-between rounded-xl"
                                     >
                                         <Text className={`text-sm font-medium ${localFilters.selectedYksCalculationId ? 'text-slate-700' : 'text-slate-400'}`}>
                                             {localFilters.selectedYksCalculationId
@@ -224,92 +201,10 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                             style={{ transform: [{ rotate: isYksDropdownOpen ? '180deg' : '0deg' }] }}
                                         />
                                     </TouchableOpacity>
-                                    
-                                    {isYksDropdownOpen && (
-                                        <View 
-                                            className="absolute top-full left-0 right-0 bg-white border-2 border-slate-300 rounded-b-2xl shadow-xl z-50 overflow-hidden"
-                                            style={{
-                                                borderTopWidth: 1,
-                                                borderTopColor: '#cbd5e1',
-                                                borderTopLeftRadius: 0,
-                                                borderTopRightRadius: 0,
-                                                borderBottomLeftRadius: 16,
-                                                borderBottomRightRadius: 16,
-                                                borderLeftWidth: 2,
-                                                borderRightWidth: 2,
-                                                borderBottomWidth: 2,
-                                                borderColor: '#cbd5e1',
-                                                shadowColor: '#000',
-                                                shadowOffset: { width: 0, height: 4 },
-                                                shadowOpacity: 0.15,
-                                                shadowRadius: 12,
-                                                elevation: 8,
-                                            }}
-                                        >
-                                            <ScrollView 
-                                                className="max-h-60" 
-                                                nestedScrollEnabled
-                                                showsVerticalScrollIndicator={true}
-                                            >
-                                                <TouchableOpacity
-                                                    onPress={() => {
-                                                        setLocalFilters(prev => ({ ...prev, selectedYksCalculationId: null }));
-                                                        setIsYksDropdownOpen(false);
-                                                    }}
-                                                    className={`px-5 py-3 border-b border-slate-200 ${!localFilters.selectedYksCalculationId ? 'bg-blue-50' : 'bg-white'}`}
-                                                >
-                                                    <Text className={`text-sm font-medium ${!localFilters.selectedYksCalculationId ? 'text-blue-600' : 'text-slate-600'}`}>
-                                                        Seçimi kaldır
-                                                    </Text>
-                                                </TouchableOpacity>
-                                                {yksCalculations.length === 0 ? (
-                                                    <View className="px-5 py-4">
-                                                        <Text className="text-sm text-slate-400 text-center">
-                                                            Henüz net geçmişi yok
-                                                        </Text>
-                                                    </View>
-                                                ) : (
-                                                    yksCalculations.map((calc, index) => {
-                                                        const isSelected = localFilters.selectedYksCalculationId === calc.id;
-                                                        const isLast = index === yksCalculations.length - 1;
-                                                        // Get the best score for display
-                                                        const scores = [
-                                                            { type: 'TYT', score: calc.tytYerlesme },
-                                                            { type: 'SAY', score: calc.sayYerlesme },
-                                                            { type: 'EA', score: calc.eaYerlesme },
-                                                            { type: 'SÖZ', score: calc.sozYerlesme },
-                                                            ...(calc.dilYerlesme !== undefined ? [{ type: 'DİL', score: calc.dilYerlesme }] : []),
-                                                        ].filter(s => s.score > 0).sort((a, b) => b.score - a.score);
-                                                        const bestScore = scores[0];
-                                                        
-                                                        return (
-                                                            <TouchableOpacity
-                                                                key={calc.id}
-                                                                onPress={() => {
-                                                                    setLocalFilters(prev => ({ ...prev, selectedYksCalculationId: calc.id }));
-                                                                    setIsYksDropdownOpen(false);
-                                                                }}
-                                                                className={`px-5 py-3 ${!isLast ? 'border-b border-slate-200' : ''} ${isSelected ? 'bg-blue-50' : 'bg-white'}`}
-                                                            >
-                                                                <Text className={`text-sm font-semibold ${isSelected ? 'text-blue-600' : 'text-slate-700'}`}>
-                                                                    {calc.name}
-                                                                </Text>
-                                                                {bestScore && (
-                                                                    <Text className={`text-xs mt-1 ${isSelected ? 'text-blue-500' : 'text-slate-500'}`}>
-                                                                        En iyi: {bestScore.type} - {bestScore.score != null ? bestScore.score.toFixed(3) : 'N/A'}
-                                                                    </Text>
-                                                                )}
-                                                            </TouchableOpacity>
-                                                        );
-                                                    })
-                                                )}
-                                            </ScrollView>
-                                        </View>
-                                    )}
                                 </View>
                                 {localFilters.selectedYksCalculationId && (
-                                    <View className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                                        <Text className="text-xs text-blue-700 font-medium mb-1">
+                                    <View className="mt-3 p-3 bg-blue-50 rounded-lg -z-10">
+                                        <Text className="text-blue-700 font-medium mb-1" style={{ fontSize: 9.5 }}>
                                             Seçili hesaplama ile puanının yettiği üniversiteler gösterilecek
                                         </Text>
                                     </View>
@@ -317,7 +212,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                             </View>
 
                             {/* Sort Section */}
-                            <View className="pt-6 pb-6 border-b border-slate-100">
+                            <View className="pt-6 pb-6 border-b border-slate-100 z-0">
                                 <Text className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider">Sıralama</Text>
                                 <View className="flex-row w-full">
                                     {['score', 'rank', 'quota', 'year'].map((item, index) => {
@@ -603,6 +498,96 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                 </View>
                             </View>
                         </ScrollView>
+
+                        {/* Full-screen dropdown for YKS net geçmişi so it appears above all other filter content */}
+                        <Modal
+                            visible={isYksDropdownOpen}
+                            transparent
+                            animationType="fade"
+                            onRequestClose={() => setIsYksDropdownOpen(false)}
+                        >
+                            {/* Dimmed background so net geçmişi card sits on top with same size as filter card */}
+                            <View className="flex-1 bg-black/50 justify-center items-center px-4">
+                                <View
+                                    className="bg-white rounded-2xl overflow-hidden border border-slate-200"
+                                    style={{ width: '100%', maxHeight: '80%' }}
+                                >
+                                    <View className="flex-row items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
+                                        <Text className="text-sm font-semibold text-slate-800">
+                                            Net Geçmişi
+                                        </Text>
+                                        <TouchableOpacity
+                                            onPress={() => setIsYksDropdownOpen(false)}
+                                            className="p-1.5 rounded-full bg-slate-100"
+                                        >
+                                            <X size={16} color="#64748b" />
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    <ScrollView
+                                        className="w-full"
+                                        style={{ maxHeight: 260 }}
+                                        showsVerticalScrollIndicator
+                                    >
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                setLocalFilters(prev => ({ ...prev, selectedYksCalculationId: null }));
+                                                setIsYksDropdownOpen(false);
+                                            }}
+                                            className={`px-5 py-3 border-b border-slate-200 ${!localFilters.selectedYksCalculationId ? 'bg-blue-50' : 'bg-white'}`}
+                                        >
+                                            <Text className={`text-sm font-medium ${!localFilters.selectedYksCalculationId ? 'text-blue-600' : 'text-slate-600'}`}>
+                                                Seçimi kaldır
+                                            </Text>
+                                        </TouchableOpacity>
+
+                                        {yksCalculations.length === 0 ? (
+                                            <View className="px-5 py-4">
+                                                <Text className="text-sm text-slate-400 text-center">
+                                                    Henüz net geçmişi yok
+                                                </Text>
+                                            </View>
+                                        ) : (
+                                            yksCalculations.map((calc, index) => {
+                                                const isSelected = localFilters.selectedYksCalculationId === calc.id;
+                                                const isLast = index === yksCalculations.length - 1;
+
+                                                const scores = [
+                                                    { type: 'TYT', score: calc.tytYerlesme },
+                                                    { type: 'SAY', score: calc.sayYerlesme },
+                                                    { type: 'EA', score: calc.eaYerlesme },
+                                                    { type: 'SÖZ', score: calc.sozYerlesme },
+                                                    ...(calc.dilYerlesme !== undefined ? [{ type: 'DİL', score: calc.dilYerlesme }] : []),
+                                                ]
+                                                    .filter(s => s.score > 0)
+                                                    .sort((a, b) => b.score - a.score);
+                                                const bestScore = scores[0];
+
+                                                return (
+                                                    <TouchableOpacity
+                                                        key={calc.id}
+                                                        onPress={() => {
+                                                            setLocalFilters(prev => ({ ...prev, selectedYksCalculationId: calc.id }));
+                                                            setIsYksDropdownOpen(false);
+                                                        }}
+                                                        className={`px-5 py-3 ${!isLast ? 'border-b border-slate-200' : ''} ${isSelected ? 'bg-blue-50' : 'bg-white'}`}
+                                                    >
+                                                        <Text className={`text-sm font-semibold ${isSelected ? 'text-blue-600' : 'text-slate-700'}`}>
+                                                            {calc.name}
+                                                        </Text>
+                                                        {bestScore && (
+                                                            <Text className={`text-xs mt-1 ${isSelected ? 'text-blue-500' : 'text-slate-500'}`}>
+                                                                En iyi: {bestScore.type} - {bestScore.score != null ? bestScore.score.toFixed(3) : 'N/A'}
+                                                            </Text>
+                                                        )}
+                                                    </TouchableOpacity>
+                                                );
+                                            })
+                                        )}
+                                    </ScrollView>
+                                </View>
+                            </View>
+                        </Modal>
 
                         {/* Footer Actions */}
                         <View className="px-5 pt-4 pb-4 border-t border-slate-100 bg-slate-50">

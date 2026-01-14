@@ -1035,7 +1035,7 @@ export default function YksNetScreen() {
               )}
               {tytEstimatedRank !== null && (
                 <View className="flex-row items-center justify-between pt-1 border-t border-blue-200">
-                  <Text className="text-xs text-blue-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                  <Text className="text-xs text-blue-600 font-medium">Tahmini Sıralama</Text>
                   <Text className="text-base font-bold text-blue-700">
                     {tytEstimatedRank.toLocaleString('tr-TR')}
                   </Text>

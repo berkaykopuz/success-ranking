@@ -1674,7 +1674,7 @@ export default function KisiselScreen() {
                                 )}
                                 {selectedCalculation.tytEstimatedRank !== null && selectedCalculation.tytEstimatedRank !== undefined && (
                                     <View className="flex-row items-center justify-between pt-1 border-t border-blue-200">
-                                        <Text className="text-xs text-blue-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                                        <Text className="text-xs text-blue-600 font-medium">Tahmini Sıralama</Text>
                                         <Text className="text-base font-bold text-blue-700">
                                             {selectedCalculation.tytEstimatedRank.toLocaleString('tr-TR')}
                                         </Text>
@@ -2158,7 +2158,7 @@ function NetFormStatusScreen({ insets, onBack, calculations }: NetFormStatusScre
                                     <View className="bg-blue-50 px-2.5 py-1 rounded-md mr-2">
                                         <Text className="text-blue-700 font-bold text-[10px] tracking-wider uppercase">TYT</Text>
                                     </View>
-                                    <Text className="text-lg font-bold text-slate-800">TYT Net Karşılaştırması (Ders)</Text>
+                                    <Text className="text-lg font-bold text-slate-800">TYT Net Karşılaştırması </Text>
                                 </View>
                                 <ComparisonChart calculations={last5Calculations} type="tyt" />
                             </View>
@@ -2169,7 +2169,7 @@ function NetFormStatusScreen({ insets, onBack, calculations }: NetFormStatusScre
                                     <View className="bg-emerald-50 px-2.5 py-1 rounded-md mr-2">
                                         <Text className="text-emerald-700 font-bold text-[10px] tracking-wider uppercase">SAY</Text>
                                     </View>
-                                    <Text className="text-lg font-bold text-slate-800">SAY Net Karşılaştırması (Ders)</Text>
+                                    <Text className="text-lg font-bold text-slate-800">SAY Net Karşılaştırması </Text>
                                 </View>
                                 <ComparisonChart calculations={last5Calculations} type="say" />
                             </View>
@@ -2180,7 +2180,7 @@ function NetFormStatusScreen({ insets, onBack, calculations }: NetFormStatusScre
                                     <View className="bg-purple-50 px-2.5 py-1 rounded-md mr-2">
                                         <Text className="text-purple-700 font-bold text-[10px] tracking-wider uppercase">EA</Text>
                                     </View>
-                                    <Text className="text-lg font-bold text-slate-800">EA Net Karşılaştırması (Ders)</Text>
+                                    <Text className="text-lg font-bold text-slate-800">EA Net Karşılaştırması </Text>
                                 </View>
                                 <ComparisonChart calculations={last5Calculations} type="ea" />
                             </View>
@@ -2191,7 +2191,7 @@ function NetFormStatusScreen({ insets, onBack, calculations }: NetFormStatusScre
                                     <View className="bg-orange-50 px-2.5 py-1 rounded-md mr-2">
                                         <Text className="text-orange-700 font-bold text-[10px] tracking-wider uppercase">SÖZ</Text>
                                     </View>
-                                    <Text className="text-lg font-bold text-slate-800">SÖZ Net Karşılaştırması (Ders)</Text>
+                                    <Text className="text-lg font-bold text-slate-800">SÖZ Net Karşılaştırması </Text>
                                 </View>
                                 <ComparisonChart calculations={last5Calculations} type="soz" />
                             </View>
@@ -2202,7 +2202,7 @@ function NetFormStatusScreen({ insets, onBack, calculations }: NetFormStatusScre
                                     <View className="bg-rose-50 px-2.5 py-1 rounded-md mr-2">
                                         <Text className="text-rose-700 font-bold text-[10px] tracking-wider uppercase">DİL</Text>
                                     </View>
-                                    <Text className="text-lg font-bold text-slate-800">DİL Net Karşılaştırması (Ders)</Text>
+                                    <Text className="text-lg font-bold text-slate-800">DİL Net Karşılaştırması </Text>
                                 </View>
                                 <ComparisonChart calculations={last5Calculations} type="dil" />
                             </View>

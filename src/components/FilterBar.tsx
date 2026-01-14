@@ -11,7 +11,7 @@ const CATEGORIES = ['SAY', 'EA', 'SÖZ', 'DİL', 'TYT'];
 const SUB_CATEGORIES: Record<string, string[]> = {
     'SAY': ['Mühendislik', 'Tıp', 'Mimarlık', 'Diş Hekimliği', 'Matematik'],
     'SÖZ': ['Tarih', 'Coğrafya', 'Edebiyat', 'Gazetecilik', 'İlahiyat'],
-    'EA': ['Hukuk', 'İşletme', 'Psikoloji', 'PDR', 'Ekonomi'],
+    'EA': ['Hukuk', 'İşletme', 'Psikoloji', 'Rehberlik', 'Ekonomi'],
     'DİL': ['İngilizce Öğr.', 'Mütercim', 'Çeviribilim', 'Almanca', 'Fransızca'],
     'TYT': [],
 };
