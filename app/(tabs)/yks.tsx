@@ -1066,7 +1066,7 @@ export default function YksNetScreen() {
               )}
               {sayEstimatedRank !== null && (
                 <View className="flex-row items-center justify-between pt-1 border-t border-emerald-200">
-                  <Text className="text-xs text-emerald-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                  <Text className="text-xs text-emerald-600 font-medium">Tahmini Sıralama</Text>
                   <Text className="text-base font-bold text-emerald-700">
                     {sayEstimatedRank.toLocaleString('tr-TR')}
                   </Text>
@@ -1097,7 +1097,7 @@ export default function YksNetScreen() {
               )}
               {eaEstimatedRank !== null && (
                 <View className="flex-row items-center justify-between pt-1 border-t border-purple-200">
-                  <Text className="text-xs text-purple-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                  <Text className="text-xs text-purple-600 font-medium">Tahmini Sıralama</Text>
                   <Text className="text-base font-bold text-purple-700">
                     {eaEstimatedRank.toLocaleString('tr-TR')}
                   </Text>
@@ -1128,7 +1128,7 @@ export default function YksNetScreen() {
               )}
               {sozEstimatedRank !== null && (
                 <View className="flex-row items-center justify-between pt-1 border-t border-orange-200">
-                  <Text className="text-xs text-orange-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                  <Text className="text-xs text-orange-600 font-medium">Tahmini Sıralama</Text>
                   <Text className="text-base font-bold text-orange-700">
                     {sozEstimatedRank.toLocaleString('tr-TR')}
                   </Text>
@@ -1159,7 +1159,7 @@ export default function YksNetScreen() {
               )}
               {dilEstimatedRank !== null && (
                 <View className="flex-row items-center justify-between pt-1 border-t border-rose-200">
-                  <Text className="text-xs text-rose-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                  <Text className="text-xs text-rose-600 font-medium">Tahmini Sıralama</Text>
                   <Text className="text-base font-bold text-rose-700">
                     {dilEstimatedRank.toLocaleString('tr-TR')}
                   </Text>

@@ -100,7 +100,10 @@ export const RankingCard = React.memo(({ item, router }: Props) => {
                 </TouchableOpacity>
             </View>
 
-            <View className="mt-8 flex-row items-center justify-between bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+            <View 
+                className="flex-row items-center justify-between bg-slate-50 px-3 py-1 rounded-xl border border-slate-100"
+                style={{ marginTop: 22 }}
+            >
                 <View className="items-center flex-1 border-r border-slate-200">
                     <Text className="text-[10px] text-slate-400 font-medium uppercase tracking-wide mb-0.5">Yıl</Text>
                     <Text className="text-sm font-semibold text-slate-700">{item.year}</Text>

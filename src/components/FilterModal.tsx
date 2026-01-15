@@ -324,7 +324,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                             </View>
 
                             {/* Ranges Section */}
-                            <View className="pt-6 pb-5 border-b border-slate-100">
+                            <View className="pt-6 pb-6 border-b border-slate-100">
                                 <Text className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider">ARALIK FİLTRESİ</Text>
                                 
                                 {/* Range Type Selector */}
@@ -518,7 +518,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                         </Text>
                                         <TouchableOpacity
                                             onPress={() => setIsYksDropdownOpen(false)}
-                                            className="p-1.5 rounded-full bg-slate-100"
+                                            className="p-2.5 rounded-full bg-slate-100"
                                         >
                                             <X size={16} color="#64748b" />
                                         </TouchableOpacity>

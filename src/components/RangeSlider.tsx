@@ -352,6 +352,8 @@ const InputBox = ({ label, value, onChange, onBlur }: { label: string, value: st
 const styles = StyleSheet.create({
   container: {
     width: '100%',
+    marginTop: 16,
+    marginBottom: 8,
   },
   label: {
     fontSize: 12,
