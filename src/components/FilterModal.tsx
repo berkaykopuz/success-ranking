@@ -168,7 +168,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                     >
                         {/* Header */}
                         <View className="flex-row justify-between items-center px-5 py-4 border-b border-slate-100 bg-slate-50/50">
-                            <Text className="text-xl font-bold text-slate-800">Filtrele</Text>
+                            <Text className="text-xs font-bold text-slate-800">Filtrele</Text>
                             <TouchableOpacity onPress={onClose} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200">
                                 <X size={20} color="#64748b" />
                             </TouchableOpacity>
@@ -190,7 +190,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                         onPress={() => setIsYksDropdownOpen(!isYksDropdownOpen)}
                                         className="bg-slate-50 border border-slate-200 px-5 py-4 flex-row items-center justify-between rounded-xl"
                                     >
-                                        <Text className={`text-sm font-medium ${localFilters.selectedYksCalculationId ? 'text-slate-700' : 'text-slate-400'}`}>
+                                        <Text className={`text-xs font-medium ${localFilters.selectedYksCalculationId ? 'text-slate-700' : 'text-slate-400'}`}>
                                             {localFilters.selectedYksCalculationId
                                                 ? yksCalculations.find(c => c.id === localFilters.selectedYksCalculationId)?.name || 'Seçili hesaplama'
                                                 : 'Net geçmişi seçin...'}
@@ -214,7 +214,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                             {/* Sort Section */}
                             <View className="pt-6 pb-6 border-b border-slate-100 z-0">
                                 <Text className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider">Sıralama</Text>
-                                <View className="flex-row w-full">
+                                <View className="flex-row w-full gap-3">
                                     {['score', 'rank', 'quota', 'year'].map((item, index) => {
                                         const labels: Record<string, string> = { score: 'Puan', rank: 'Sıralama', quota: 'Kontenjan', year: 'Yıl' };
                                         const isSelected = localFilters.sortBy === item;
@@ -222,7 +222,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                             <TouchableOpacity
                                                 key={item}
                                                 onPress={() => setLocalFilters(prev => ({ ...prev, sortBy: item as any }))}
-                                                className={`flex-1 py-4 px-2 rounded-xl items-center justify-center ${index > 0 ? 'ml-1.5' : ''} ${isSelected ? 'bg-blue-600' : 'bg-slate-50'}`}
+                                                className={`flex-1 py-4 px-2 rounded-xl items-center justify-center ${isSelected ? 'bg-blue-600' : 'bg-slate-50'}`}
                                                 style={{
                                                     flex: 1,
                                                     shadowColor: isSelected ? '#3b82f6' : '#000',
@@ -232,7 +232,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                                     elevation: isSelected ? 4 : 2,
                                                 }}
                                             >
-                                                <Text className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`}>
+                                                <Text className={`text-xs font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`}>
                                                     {labels[item]}
                                                 </Text>
                                             </TouchableOpacity>
@@ -264,7 +264,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                 <View className="mb-6">
                                     <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">ŞEHİR</Text>
                                     <TextInput
-                                        className="bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-slate-700 font-medium text-sm"
+                                        className="bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-slate-700 font-medium text-xs"
                                         style={{ color: 'black' }}
                                         placeholder="Örn: Ankara, İstanbul..."
                                         placeholderTextColor="#64748b"
@@ -275,7 +275,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                 <View className="mb-6">
                                     <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">ÜNİVERSİTE</Text>
                                     <TextInput
-                                        className="bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-slate-700 font-medium text-sm"
+                                        className="bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-slate-700 font-medium text-xs"
                                         style={{ color: 'black' }}
                                         placeholder="Örn: ODTÜ, Boğaziçi..."
                                         placeholderTextColor="#64748b"
@@ -286,7 +286,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                 <View className="mb-6">
                                     <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">BÖLÜM</Text>
                                     <TextInput
-                                        className="bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-slate-700 font-medium text-sm"
+                                        className="bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-slate-700 font-medium text-xs"
                                         style={{ color: 'black' }}
                                         placeholder="Örn: Bilgisayar Mühendisliği..."
                                         placeholderTextColor="#64748b"
@@ -296,14 +296,14 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                 </View>
                                 <View className="mb-6">
                                     <Text className="text-xs font-bold text-slate-400 mb-3 uppercase tracking-wider">OKUL TÜRÜ</Text>
-                                    <View className="flex-row w-full">
+                                    <View className="flex-row w-full gap-3">
                                         {['Devlet', 'Vakıf'].map((item, index) => {
                                             const isSelected = localFilters.quotaType === item;
                                             return (
                                                 <TouchableOpacity
                                                     key={item}
                                                     onPress={() => setLocalFilters(prev => ({ ...prev, quotaType: isSelected ? null : item }))}
-                                                    className={`flex-1 py-4 px-2 rounded-xl items-center justify-center ${index > 0 ? 'ml-1.5' : ''} ${isSelected ? 'bg-blue-600' : 'bg-slate-50'}`}
+                                                    className={`flex-1 py-4 px-2 rounded-xl items-center justify-center ${isSelected ? 'bg-blue-600' : 'bg-slate-50'}`}
                                                     style={{
                                                         flex: 1,
                                                         shadowColor: isSelected ? '#3b82f6' : '#000',
@@ -313,7 +313,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                                         elevation: isSelected ? 4 : 2,
                                                     }}
                                                 >
-                                                    <Text className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`}>
+                                                    <Text className={`text-xs font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`}>
                                                         {item}
                                                     </Text>
                                                 </TouchableOpacity>
@@ -328,7 +328,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                 <Text className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider">ARALIK FİLTRESİ</Text>
                                 
                                 {/* Range Type Selector */}
-                                <View className="flex-row w-full mb-5">
+                                <View className="flex-row w-full mb-5 gap-3">
                                     <TouchableOpacity
                                         onPress={() => {
                                             if (rangeType !== 'puan') {
@@ -361,7 +361,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                             elevation: rangeType === 'puan' ? 4 : 2,
                                         }}
                                     >
-                                        <Text className={`text-sm font-semibold ${rangeType === 'puan' ? 'text-white' : 'text-slate-600'}`}>
+                                        <Text className={`text-xs font-semibold ${rangeType === 'puan' ? 'text-white' : 'text-slate-600'}`}>
                                             Puan Aralığı
                                         </Text>
                                     </TouchableOpacity>
@@ -387,7 +387,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                             }
                                             setRangeType('siralama');
                                         }}
-                                        className={`flex-1 py-4 px-2 rounded-xl items-center justify-center ml-1.5 ${rangeType === 'siralama' ? 'bg-blue-600' : 'bg-slate-50'}`}
+                                        className={`flex-1 py-4 px-2 rounded-xl items-center justify-center ${rangeType === 'siralama' ? 'bg-blue-600' : 'bg-slate-50'}`}
                                         style={{
                                             flex: 1,
                                             shadowColor: rangeType === 'siralama' ? '#3b82f6' : '#000',
@@ -397,7 +397,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                             elevation: rangeType === 'siralama' ? 4 : 2,
                                         }}
                                     >
-                                        <Text className={`text-sm font-semibold ${rangeType === 'siralama' ? 'text-white' : 'text-slate-600'}`}>
+                                        <Text className={`text-xs font-semibold ${rangeType === 'siralama' ? 'text-white' : 'text-slate-600'}`}>
                                             Sıralama Aralığı
                                         </Text>
                                     </TouchableOpacity>
@@ -488,7 +488,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                                             />
                                                         )}
                                                     </View>
-                                                    <Text className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`} numberOfLines={2} style={{ textAlign: 'center' }}>
+                                                    <Text className={`text-xs font-semibold ${isSelected ? 'text-white' : 'text-slate-600'}`} numberOfLines={2} style={{ textAlign: 'center' }}>
                                                         {lang}
                                                     </Text>
                                                 </View>
@@ -513,7 +513,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                     style={{ width: '100%', maxHeight: '80%' }}
                                 >
                                     <View className="flex-row items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
-                                        <Text className="text-sm font-semibold text-slate-800">
+                                        <Text className="text-xs font-semibold text-slate-800">
                                             Net Geçmişi
                                         </Text>
                                         <TouchableOpacity
@@ -536,14 +536,14 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                             }}
                                             className={`px-5 py-3 border-b border-slate-200 ${!localFilters.selectedYksCalculationId ? 'bg-blue-50' : 'bg-white'}`}
                                         >
-                                            <Text className={`text-sm font-medium ${!localFilters.selectedYksCalculationId ? 'text-blue-600' : 'text-slate-600'}`}>
+                                            <Text className={`text-xs font-medium ${!localFilters.selectedYksCalculationId ? 'text-blue-600' : 'text-slate-600'}`}>
                                                 Seçimi kaldır
                                             </Text>
                                         </TouchableOpacity>
 
                                         {yksCalculations.length === 0 ? (
                                             <View className="px-5 py-4">
-                                                <Text className="text-sm text-slate-400 text-center">
+                                                <Text className="text-xs text-slate-400 text-center">
                                                     Henüz net geçmişi yok
                                                 </Text>
                                             </View>
@@ -572,7 +572,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                                         }}
                                                         className={`px-5 py-3 ${!isLast ? 'border-b border-slate-200' : ''} ${isSelected ? 'bg-blue-50' : 'bg-white'}`}
                                                     >
-                                                        <Text className={`text-sm font-semibold ${isSelected ? 'text-blue-600' : 'text-slate-700'}`}>
+                                                        <Text className={`text-xs font-semibold ${isSelected ? 'text-blue-600' : 'text-slate-700'}`}>
                                                             {calc.name}
                                                         </Text>
                                                         {bestScore && (
@@ -603,7 +603,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                         elevation: 2,
                                     }}
                                 >
-                                    <Text className="font-bold text-slate-600 text-sm">Temizle</Text>
+                                    <Text className="font-bold text-slate-600 text-xs">Temizle</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     onPress={handleApply}
@@ -616,7 +616,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose }) =>
                                         elevation: 4,
                                     }}
                                 >
-                                    <Text className="font-bold text-white text-sm">Uygula</Text>
+                                    <Text className="font-bold text-white text-xs">Uygula</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>

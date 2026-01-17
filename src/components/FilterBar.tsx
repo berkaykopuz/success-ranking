@@ -88,13 +88,13 @@ export const FilterBar = () => {
             </View>
 
             {/* Main Categories Row */}
-            <View className="flex-row items-center mt-3 px-4 gap-2.5 mb-1">
+            <View className="flex-row items-center mt-1 px-4 gap-3 mb-3">
                 {CATEGORIES.map((cat) => (
                     <TouchableOpacity
                         key={cat}
                         onPress={() => handleCategoryPress(cat)}
                         activeOpacity={0.7}
-                        className={`flex-1 py-5 px-3 justify-center items-center rounded-2xl shadow-sm ${
+                        className={`flex-1 py-4 px-2 justify-center items-center rounded-2xl shadow-sm ${
                             scoreType === cat
                                 ? 'bg-blue-600 shadow-blue-200'
                                 : 'bg-white shadow-slate-100'
@@ -108,9 +108,12 @@ export const FilterBar = () => {
                         }}
                     >
                         <Text
-                            className={`text-base font-bold tracking-wide ${
+                            className={`text-sm font-bold ${
                                 scoreType === cat ? 'text-white' : 'text-slate-700'
                             }`}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.8}
                         >
                             {cat}
                         </Text>
@@ -118,7 +121,7 @@ export const FilterBar = () => {
                 ))}
 
                 <TouchableOpacity
-                    className="flex-row items-center justify-center bg-white px-4 py-5 rounded-2xl border-2 border-slate-200"
+                    className="flex-row items-center justify-center bg-white px-4 py-3 rounded-2xl border-2 border-slate-200"
                     onPress={() => {
                         Haptics.selectionAsync();
                         setFilterModalVisible(true);
@@ -143,7 +146,7 @@ export const FilterBar = () => {
 
             {/* Sub Categories */}
             {scoreType && SUB_CATEGORIES[scoreType] && (
-                <View className="mt-3 px-4 mb-2">
+                <View className="mt-1 px-4 mb-4">
                      <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -194,7 +197,7 @@ export const FilterBar = () => {
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{ gap: 8 }}
+                        contentContainerStyle={{ gap: 6 }}
                     >
                     {selectedYksCalculation && (
                         <TouchableOpacity
