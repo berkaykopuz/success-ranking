@@ -39,6 +39,19 @@ const normalizeTurkishForSQL = (column: string): string => {
     return `LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(${column}, 'İ', 'i'), 'I', 'ı'), 'Ş', 'ş'), 'Ğ', 'ğ'), 'Ç', 'ç'), 'Ö', 'ö'), 'Ü', 'ü'))`;
 };
 
+// Helper function to normalize search query text for Turkish characters
+const normalizeSearchQuery = (text: string): string => {
+    return text
+        .replace(/İ/g, 'i')
+        .replace(/I/g, 'ı')
+        .replace(/Ş/g, 'ş')
+        .replace(/Ğ/g, 'ğ')
+        .replace(/Ç/g, 'ç')
+        .replace(/Ö/g, 'ö')
+        .replace(/Ü/g, 'ü')
+        .toLocaleLowerCase('tr-TR');
+};
+
 // Helper for search
 const matchesSearch = (item: RankingItem, query: string) => {
     const q = query.toLocaleLowerCase('tr-TR');
@@ -110,18 +123,6 @@ export const fetchRankings = async (
 
     const params: any[] = [];
 
-    // Search query filter (moved to SQL for better performance)
-    // Searches in university_name, program_name, and faculty
-    if (filters.searchQuery && filters.searchQuery.trim()) {
-        const searchPattern = `%${filters.searchQuery.trim().toLocaleLowerCase('tr-TR')}%`;
-        query += ` AND (
-            ${normalizeTurkishForSQL('p.university_name')} LIKE ? OR 
-            ${normalizeTurkishForSQL('p.program_name')} LIKE ? OR 
-            ${normalizeTurkishForSQL('p.faculty')} LIKE ?
-        )`;
-        params.push(searchPattern, searchPattern, searchPattern);
-    }
-
     // Year filter
     if (filters.year !== null) {
         query += ` AND ys.year = ?`;
@@ -163,6 +164,19 @@ export const fetchRankings = async (
             ) best_years ON ys.program_id = best_years.program_id AND ys.year = best_years.best_year
             WHERE ys.taban_puan > 0
         `;
+    }
+
+    // Search query filter (moved to SQL for better performance)
+    // Searches only in university_name and program_name
+    // Must be applied AFTER year filter to work correctly
+    if (filters.searchQuery && filters.searchQuery.trim()) {
+        const normalizedQuery = normalizeSearchQuery(filters.searchQuery.trim());
+        const searchPattern = `%${normalizedQuery}%`;
+        query += ` AND (
+            ${normalizeTurkishForSQL('p.university_name')} LIKE ? OR 
+            ${normalizeTurkishForSQL('p.program_name')} LIKE ?
+        )`;
+        params.push(searchPattern, searchPattern);
     }
 
     // Score type filter
