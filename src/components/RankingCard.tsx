@@ -9,9 +9,11 @@ import { ListModal } from './ListModal';
 interface Props {
     item: RankingItem;
     router: Router;
+    onLongPress?: () => void;
+    isDragging?: boolean;
 }
 
-export const RankingCard = React.memo(({ item, router }: Props) => {
+export const RankingCard = React.memo(({ item, router, onLongPress, isDragging }: Props) => {
     const [isListModalVisible, setIsListModalVisible] = useState(false);
 
     const handleAddToList = () => {
@@ -59,7 +61,12 @@ export const RankingCard = React.memo(({ item, router }: Props) => {
     return (
         <>
             <TouchableOpacity
-                onPress={() => router.push(`/ranking/${item.id}`)}
+                onPress={() => {
+                    if (!isDragging) {
+                        router.push(`/ranking/${item.id}`);
+                    }
+                }}
+                onLongPress={onLongPress}
                 className="bg-white p-5 mb-1 rounded-2xl border border-slate-100 shadow-sm mx-4 active:scale-[0.98] active:bg-slate-50 transition-all"
             >
             <View className="flex-row justify-between items-start">

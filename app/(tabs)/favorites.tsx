@@ -1,6 +1,6 @@
 import { FlashList } from '@shopify/flash-list';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
-import { Folder, Plus, ChevronRight, Trash2, Edit2, History, List, ArrowLeft, GripVertical, BarChart3, Save, X } from 'lucide-react-native';
+import { Folder, Plus, ChevronRight, Trash2, Edit2, History, List, ArrowLeft, BarChart3, Save, X } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
 import {
     Text,
@@ -212,21 +212,47 @@ export default function KisiselScreen() {
     );
 
     const renderRankingItem = useCallback(
-        ({ item, drag, isActive }: RenderItemParams<RankingItem>) => (
-            <ScaleDecorator>
-                <View className="relative">
-                    <TouchableOpacity
-                        onLongPress={drag}
-                        disabled={isActive}
-                        activeOpacity={0.7}
-                        className={isActive ? 'opacity-80' : ''}
-                    >
+        ({ item, drag, isActive, getIndex }: RenderItemParams<RankingItem>) => {
+            // Try to get index from getIndex() first, fallback to finding it in the array
+            let index = -1;
+            if (getIndex && typeof getIndex === 'function') {
+                try {
+                    const idx = getIndex();
+                    if (typeof idx === 'number' && idx >= 0) {
+                        index = idx;
+                    }
+                } catch (e) {
+                    // Fallback to array search
+                }
+            }
+            
+            // Fallback: find index from current list items
+            if (index < 0) {
+                const currentList = lists.find((l) => l.id === selectedList?.id);
+                const foundIndex = currentList?.items.findIndex((i) => i.id === item.id) ?? -1;
+                if (foundIndex >= 0) {
+                    index = foundIndex;
+                }
+            }
+            
+            const displayNumber = index >= 0 ? String(index + 1) : '';
+            
+            return (
+                <ScaleDecorator>
+                    <View className="relative">
                         <View className="flex-row items-center">
-                            <View className="pl-2 pr-1 py-5">
-                                <GripVertical size={20} color="#94a3b8" />
+                            <View className="pl-2 pr-3 py-5 items-center justify-center min-w-[32px]">
+                                <Text className="text-slate-400 font-bold text-xl text-center">
+                                    {displayNumber}
+                                </Text>
                             </View>
                             <View className="flex-1 relative">
-                                <RankingCard item={item} router={router} />
+                                <RankingCard 
+                                    item={item} 
+                                    router={router} 
+                                    onLongPress={drag}
+                                    isDragging={isActive}
+                                />
                                 <TouchableOpacity
                                     onPress={() => handleRemoveItem(item)}
                                     className="absolute top-0 left-4 bg-red-50 p-2 rounded-full border border-red-200 z-10"
@@ -236,11 +262,11 @@ export default function KisiselScreen() {
                                 </TouchableOpacity>
                             </View>
                         </View>
-                    </TouchableOpacity>
-                </View>
-            </ScaleDecorator>
-        ),
-        [selectedList, lists, router]
+                    </View>
+                </ScaleDecorator>
+            );
+        },
+        [selectedList, lists, router, handleRemoveItem]
     );
 
     const renderEmptyLists = () => (
