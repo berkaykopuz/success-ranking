@@ -30,6 +30,15 @@ interface YearRow {
 
 interface RankingRow extends ProgramRow, YearRow {}
 
+// Helper function to create SQL expression that normalizes Turkish characters for case-insensitive comparison
+// SQLite's LOWER() doesn't handle Turkish characters (İ, ı, Ş, ş, Ğ, ğ, etc.)
+// This function creates a SQL expression that replaces Turkish characters before using LOWER()
+const normalizeTurkishForSQL = (column: string): string => {
+    // Replace Turkish uppercase characters with their lowercase equivalents before LOWER()
+    // İ -> i, I -> ı, Ş -> ş, Ğ -> ğ, Ç -> ç, Ö -> ö, Ü -> ü
+    return `LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(${column}, 'İ', 'i'), 'I', 'ı'), 'Ş', 'ş'), 'Ğ', 'ğ'), 'Ç', 'ç'), 'Ö', 'ö'), 'Ü', 'ü'))`;
+};
+
 // Helper for search
 const matchesSearch = (item: RankingItem, query: string) => {
     const q = query.toLocaleLowerCase('tr-TR');
@@ -104,11 +113,11 @@ export const fetchRankings = async (
     // Search query filter (moved to SQL for better performance)
     // Searches in university_name, program_name, and faculty
     if (filters.searchQuery && filters.searchQuery.trim()) {
-        const searchPattern = `%${filters.searchQuery.trim()}%`;
+        const searchPattern = `%${filters.searchQuery.trim().toLocaleLowerCase('tr-TR')}%`;
         query += ` AND (
-            p.university_name LIKE ? COLLATE NOCASE OR 
-            p.program_name LIKE ? COLLATE NOCASE OR 
-            p.faculty LIKE ? COLLATE NOCASE
+            ${normalizeTurkishForSQL('p.university_name')} LIKE ? OR 
+            ${normalizeTurkishForSQL('p.program_name')} LIKE ? OR 
+            ${normalizeTurkishForSQL('p.faculty')} LIKE ?
         )`;
         params.push(searchPattern, searchPattern, searchPattern);
     }
@@ -164,24 +173,26 @@ export const fetchRankings = async (
 
     // City filter (Using p.location_city)
     if (filters.city) {
-        query += ` AND p.location_city LIKE ?`;
-        params.push(`%${filters.city}%`);
+        const cityPattern = `%${filters.city.toLocaleLowerCase('tr-TR')}%`;
+        query += ` AND ${normalizeTurkishForSQL('p.location_city')} LIKE ?`;
+        params.push(cityPattern);
     }
 
     // University filter (Using p.university_name)
     if (filters.university) {
-        query += ` AND p.university_name LIKE ?`;
-        params.push(`%${filters.university}%`);
+        const universityPattern = `%${filters.university.toLocaleLowerCase('tr-TR')}%`;
+        query += ` AND ${normalizeTurkishForSQL('p.university_name')} LIKE ?`;
+        params.push(universityPattern);
     }
 
     // Department filter
     if (filters.department) {
-        const deptFilter = filters.department;
-        if (filters.department === 'Mühendislik') {
-            query += ` AND (p.program_name LIKE ? OR p.program_name LIKE ?)`;
+        const deptFilter = filters.department.toLocaleLowerCase('tr-TR');
+        if (filters.department === 'Mühendislik' || filters.department.toLowerCase() === 'mühendislik') {
+            query += ` AND (${normalizeTurkishForSQL('p.program_name')} LIKE ? OR ${normalizeTurkishForSQL('p.program_name')} LIKE ?)`;
             params.push(`%${deptFilter}%`, '%mühendisliği%');
         } else {
-            query += ` AND p.program_name LIKE ?`;
+            query += ` AND ${normalizeTurkishForSQL('p.program_name')} LIKE ?`;
             params.push(`%${deptFilter}%`);
         }
     }
