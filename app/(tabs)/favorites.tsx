@@ -348,7 +348,7 @@ export default function KisiselScreen() {
         setEditedTYTValues({});
     };
 
-    const handleSaveTYT = () => {
+    const handleSaveTYT = async () => {
         if (!selectedCalculation) return;
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -360,7 +360,7 @@ export default function KisiselScreen() {
         };
 
         // Recalculate all scores
-        const recalculated = recalculateAllScores(
+        const recalculated = await recalculateAllScores(
             finalTYTValues,
             selectedCalculation.aytValues,
             selectedCalculation.diplomaGrade,
@@ -405,7 +405,7 @@ export default function KisiselScreen() {
         setEditedSAYValues({});
     };
 
-    const handleSaveSAY = () => {
+    const handleSaveSAY = async () => {
         if (!selectedCalculation) return;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
@@ -414,7 +414,7 @@ export default function KisiselScreen() {
             ...editedSAYValues,
         };
 
-        const recalculated = recalculateAllScores(
+        const recalculated = await recalculateAllScores(
             selectedCalculation.tytValues,
             finalAYTValues,
             selectedCalculation.diplomaGrade,
@@ -457,7 +457,7 @@ export default function KisiselScreen() {
         setEditedEAValues({});
     };
 
-    const handleSaveEA = () => {
+    const handleSaveEA = async () => {
         if (!selectedCalculation) return;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
@@ -466,7 +466,7 @@ export default function KisiselScreen() {
             ...editedEAValues,
         };
 
-        const recalculated = recalculateAllScores(
+        const recalculated = await recalculateAllScores(
             selectedCalculation.tytValues,
             finalAYTValues,
             selectedCalculation.diplomaGrade,
@@ -512,7 +512,7 @@ export default function KisiselScreen() {
         setEditedSOZValues({});
     };
 
-    const handleSaveSOZ = () => {
+    const handleSaveSOZ = async () => {
         if (!selectedCalculation) return;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
@@ -521,7 +521,7 @@ export default function KisiselScreen() {
             ...editedSOZValues,
         };
 
-        const recalculated = recalculateAllScores(
+        const recalculated = await recalculateAllScores(
             selectedCalculation.tytValues,
             finalAYTValues,
             selectedCalculation.diplomaGrade,
@@ -563,7 +563,7 @@ export default function KisiselScreen() {
         setEditedDILValues({});
     };
 
-    const handleSaveDIL = () => {
+    const handleSaveDIL = async () => {
         if (!selectedCalculation) return;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
@@ -572,7 +572,7 @@ export default function KisiselScreen() {
             ...editedDILValues,
         };
 
-        const recalculated = recalculateAllScores(
+        const recalculated = await recalculateAllScores(
             selectedCalculation.tytValues,
             finalAYTValues,
             selectedCalculation.diplomaGrade,
@@ -620,11 +620,11 @@ export default function KisiselScreen() {
         }
     };
 
-    const handleSaveOBP = () => {
+    const handleSaveOBP = async () => {
         if (!selectedCalculation) return;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        const recalculated = recalculateAllScores(
+        const recalculated = await recalculateAllScores(
             selectedCalculation.tytValues,
             selectedCalculation.aytValues,
             editedDiplomaGrade || selectedCalculation.diplomaGrade,
@@ -1703,7 +1703,7 @@ export default function KisiselScreen() {
                                 )}
                                 {selectedCalculation.sayEstimatedRank !== null && selectedCalculation.sayEstimatedRank !== undefined && (
                                     <View className="flex-row items-center justify-between pt-1 border-t border-emerald-200">
-                                        <Text className="text-xs text-emerald-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                                        <Text className="text-xs text-emerald-600 font-medium">Tahmini Sıralama</Text>
                                         <Text className="text-base font-bold text-emerald-700">
                                             {selectedCalculation.sayEstimatedRank.toLocaleString('tr-TR')}
                                         </Text>
@@ -1732,7 +1732,7 @@ export default function KisiselScreen() {
                                 )}
                                 {selectedCalculation.eaEstimatedRank !== null && selectedCalculation.eaEstimatedRank !== undefined && (
                                     <View className="flex-row items-center justify-between pt-1 border-t border-purple-200">
-                                        <Text className="text-xs text-purple-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                                        <Text className="text-xs text-purple-600 font-medium">Tahmini Sıralama</Text>
                                         <Text className="text-base font-bold text-purple-700">
                                             {selectedCalculation.eaEstimatedRank.toLocaleString('tr-TR')}
                                         </Text>
@@ -1761,7 +1761,7 @@ export default function KisiselScreen() {
                                 )}
                                 {selectedCalculation.sozEstimatedRank !== null && selectedCalculation.sozEstimatedRank !== undefined && (
                                     <View className="flex-row items-center justify-between pt-1 border-t border-orange-200">
-                                        <Text className="text-xs text-orange-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                                        <Text className="text-xs text-orange-600 font-medium">Tahmini Sıralama</Text>
                                         <Text className="text-base font-bold text-orange-700">
                                             {selectedCalculation.sozEstimatedRank.toLocaleString('tr-TR')}
                                         </Text>
@@ -1791,7 +1791,7 @@ export default function KisiselScreen() {
                                     )}
                                     {selectedCalculation.dilEstimatedRank !== null && selectedCalculation.dilEstimatedRank !== undefined && (
                                         <View className="flex-row items-center justify-between pt-1 border-t border-rose-200">
-                                            <Text className="text-xs text-rose-600 font-medium">Puanınıza Karşılık Gelen Tahmini Sıralama</Text>
+                                            <Text className="text-xs text-rose-600 font-medium">Tahmini Sıralama</Text>
                                             <Text className="text-base font-bold text-rose-700">
                                                 {selectedCalculation.dilEstimatedRank.toLocaleString('tr-TR')}
                                             </Text>
@@ -3377,7 +3377,7 @@ const calculateDILHamPuan = (
 };
 
 // Helper function to recalculate all scores, yerleştirme puanları, and estimated ranks
-const recalculateAllScores = (
+const recalculateAllScores = async (
     tytValues: Record<string, { correct: string; wrong: string }>,
     aytValues: Record<string, { correct: string; wrong: string }>,
     diplomaGrade: string,
@@ -3437,22 +3437,52 @@ const recalculateAllScores = (
     const sozYerlesme = sozHamPuan + obpEkPuan;
     const dilYerlesme = dilHamPuan ? dilHamPuan + obpEkPuan : undefined;
 
-    // Calculate estimated ranks
-    const tytEstimatedRank = (passesBaraj && tytYerlesme > 0) 
-        ? estimateRanking(tytYerlesme, 'TYT') 
-        : null;
-    const sayEstimatedRank = (passesBaraj && sayYerlesme > 0 && (aytMatNet > 0 || aytFizikNet > 0 || aytKimyaNet > 0 || aytBiyolojiNet > 0))
-        ? estimateRanking(sayYerlesme, 'SAY')
-        : null;
-    const eaEstimatedRank = (passesBaraj && eaYerlesme > 0 && (aytMatNet > 0 || aytEdebiyatNet > 0 || aytTarih1Net > 0 || aytCografya1Net > 0))
-        ? estimateRanking(eaYerlesme, 'EA')
-        : null;
-    const sozEstimatedRank = (passesBaraj && sozYerlesme > 0 && (aytEdebiyatNet > 0 || aytTarih1Net > 0 || aytCografya1Net > 0))
-        ? estimateRanking(sozYerlesme, 'SÖZ')
-        : null;
-    const dilEstimatedRank = (passesBaraj && dilYerlesme && dilYerlesme > 0 && aytYdtNet > 0)
-        ? estimateRanking(dilYerlesme, 'DİL')
-        : null;
+    // Calculate estimated ranks (async)
+    let tytEstimatedRank: number | null = null;
+    let sayEstimatedRank: number | null = null;
+    let eaEstimatedRank: number | null = null;
+    let sozEstimatedRank: number | null = null;
+    let dilEstimatedRank: number | null = null;
+
+    if (passesBaraj && tytYerlesme > 0) {
+        try {
+            tytEstimatedRank = await estimateRanking(tytYerlesme, 'TYT');
+        } catch (error) {
+            console.error('Error estimating TYT rank:', error);
+        }
+    }
+
+    if (passesBaraj && sayYerlesme > 0 && (aytMatNet > 0 || aytFizikNet > 0 || aytKimyaNet > 0 || aytBiyolojiNet > 0)) {
+        try {
+            sayEstimatedRank = await estimateRanking(sayYerlesme, 'SAY');
+        } catch (error) {
+            console.error('Error estimating SAY rank:', error);
+        }
+    }
+
+    if (passesBaraj && eaYerlesme > 0 && (aytMatNet > 0 || aytEdebiyatNet > 0 || aytTarih1Net > 0 || aytCografya1Net > 0)) {
+        try {
+            eaEstimatedRank = await estimateRanking(eaYerlesme, 'EA');
+        } catch (error) {
+            console.error('Error estimating EA rank:', error);
+        }
+    }
+
+    if (passesBaraj && sozYerlesme > 0 && (aytEdebiyatNet > 0 || aytTarih1Net > 0 || aytCografya1Net > 0)) {
+        try {
+            sozEstimatedRank = await estimateRanking(sozYerlesme, 'SÖZ');
+        } catch (error) {
+            console.error('Error estimating SÖZ rank:', error);
+        }
+    }
+
+    if (passesBaraj && dilYerlesme && dilYerlesme > 0 && aytYdtNet > 0) {
+        try {
+            dilEstimatedRank = await estimateRanking(dilYerlesme, 'DİL');
+        } catch (error) {
+            console.error('Error estimating DİL rank:', error);
+        }
+    }
 
     return {
         tytHamPuan,

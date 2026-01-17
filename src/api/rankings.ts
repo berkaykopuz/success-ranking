@@ -1,9 +1,25 @@
-import application from '../../outputjson.json';
 import { FilterOptions, FilterState, RankingDetail, RankingItem } from '../types/ranking';
 import { YKSCalculation } from '../store/userStore';
+import { executeQuery, executeQuerySingle } from '../db/database';
 
-// Define the shape of the raw JSON item
-interface YearData {
+// Database row interfaces
+interface ProgramRow {
+    program_id: number;
+    university_id: number;
+    university_name: string;
+    location_city: string;
+    campus: string | null;
+    university_type: string;
+    faculty: string;
+    program_name: string;
+    language: string | null;
+    duration_years: number;
+    score_type: string;
+    quota_type: string | null;
+}
+
+interface YearRow {
+    program_id: number;
     year: number;
     kontenjan: number;
     yerlesen: number;
@@ -12,52 +28,7 @@ interface YearData {
     status: string;
 }
 
-interface RawRankingItem {
-    university_id: number;
-    university_name: string;
-    location_city: string;
-    campus: string | null;
-    university_type: string;
-    faculty: string;
-    program_id: number;
-    program_name: string;
-    language: string;
-    duration_years: number;
-    score_type: string;
-    quota_type: string | null;
-    years: YearData[];
-}
-
-// 1. Pre-process data: Parse and Normalize
-// Create one RankingItem per program-year combination, using 2025 data if available, otherwise most recent year
-const processedData: RankingItem[] = (application as unknown as RawRankingItem[])
-    .flatMap((item) => {
-        // Prioritize 2025, then get the most recent year data
-        const year2025 = item.years.find(y => y.year === 2025);
-        const latestYearData = year2025 || [...item.years].sort((a, b) => b.year - a.year)[0];
-        
-        if (!latestYearData || !latestYearData.taban_puan || latestYearData.taban_puan <= 0) {
-            return [];
-        }
-
-        return {
-            id: item.program_id.toString(),
-            universityName: item.university_name,
-            departmentName: item.program_name,
-            faculty: item.faculty,
-            scoreType: item.score_type,
-            year: latestYearData.year,
-            score: latestYearData.taban_puan,
-            rank: latestYearData.basari_sirasi, // Use basari_sirasi from the year data
-            quota: latestYearData.kontenjan,
-            yerlesen: latestYearData.yerlesen,
-            city: item.location_city,
-            language: item.language || null,
-            quotaType: item.quota_type || null,
-            durationYears: item.duration_years,
-        };
-    })
-    .filter(item => item.score > 0); // Remove items without valid score
+interface RankingRow extends ProgramRow, YearRow {}
 
 // Helper for search
 const matchesSearch = (item: RankingItem, query: string) => {
@@ -74,107 +45,194 @@ interface FetchRankingsResponse {
     nextCursor: number | null;
 }
 
+// Helper function to convert database row to RankingItem
+const rowToRankingItem = (row: RankingRow): RankingItem => ({
+    id: row.program_id.toString(),
+    universityName: row.university_name,
+    departmentName: row.program_name,
+    faculty: row.faculty,
+    scoreType: row.score_type,
+    year: row.year,
+    score: row.taban_puan,
+    rank: row.basari_sirasi,
+    quota: row.kontenjan,
+    yerlesen: row.yerlesen,
+    city: row.location_city,
+    language: row.language,
+    quotaType: row.quota_type,
+    durationYears: row.duration_years,
+});
+
 export const fetchRankings = async (
     pageParam: number = 0,
     filters: FilterState,
     yksCalculation?: YKSCalculation | null
 ): Promise<FetchRankingsResponse> => {
-    // Simulate network delay for realistic feel
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // Build SQL query with filters
+    // ---------------------------------------------------------
+    // Database schema:
+    // - programs table: contains university_name, location_city, university_type directly
+    // - yearly_stats table: contains year, kontenjan, yerlesen, taban_puan, basari_sirasi, status
+    // ---------------------------------------------------------
+    let query = `
+        SELECT 
+            p.program_id,
+            p.university_id,
+            p.university_name,
+            p.location_city,
+            NULL AS campus,
+            p.university_type,
+            p.faculty,
+            p.program_name,
+            p.language,
+            p.duration_years,
+            p.score_type,
+            p.quota_type,
+            ys.year,
+            ys.kontenjan,
+            ys.yerlesen,
+            ys.taban_puan,
+            ys.basari_sirasi,
+            ys.status
+        FROM programs p
+        INNER JOIN yearly_stats ys ON p.program_id = ys.program_id
+        WHERE ys.taban_puan > 0
+    `;
 
-    let filtered = processedData;
+    const params: any[] = [];
 
-    // If year filter is specified, we need to process data for that specific year
+    // Search query filter (moved to SQL for better performance)
+    // Searches in university_name, program_name, and faculty
+    if (filters.searchQuery && filters.searchQuery.trim()) {
+        const searchPattern = `%${filters.searchQuery.trim()}%`;
+        query += ` AND (
+            p.university_name LIKE ? COLLATE NOCASE OR 
+            p.program_name LIKE ? COLLATE NOCASE OR 
+            p.faculty LIKE ? COLLATE NOCASE
+        )`;
+        params.push(searchPattern, searchPattern, searchPattern);
+    }
+
+    // Year filter
     if (filters.year !== null) {
-        const rawData = application as unknown as RawRankingItem[];
-        const yearFilteredData: RankingItem[] = rawData
-            .flatMap((item) => {
-                // Find the year data for the specified year
-                const yearData = item.years.find(y => y.year === filters.year);
-                
-                if (!yearData || !yearData.taban_puan || yearData.taban_puan <= 0) {
-                    return [];
-                }
-
-                return {
-                    id: item.program_id.toString(),
-                    universityName: item.university_name,
-                    departmentName: item.program_name,
-                    faculty: item.faculty,
-                    scoreType: item.score_type,
-                    year: yearData.year,
-                    score: yearData.taban_puan,
-                    rank: yearData.basari_sirasi, // Use basari_sirasi from the year data
-                    quota: yearData.kontenjan,
-                    yerlesen: yearData.yerlesen,
-                    city: item.location_city,
-                    language: item.language || null,
-                    quotaType: item.quota_type || null,
-                    durationYears: item.duration_years,
-                };
-            })
-            .filter(item => item.score > 0);
-
-        filtered = yearFilteredData;
+        query += ` AND ys.year = ?`;
+        params.push(filters.year);
+    } else {
+        // Use 2025 if available, otherwise most recent year per program
+        query = `
+            SELECT 
+                p.program_id,
+                p.university_id,
+                p.university_name,
+                p.location_city,
+                NULL AS campus,
+                p.university_type,
+                p.faculty,
+                p.program_name,
+                p.language,
+                p.duration_years,
+                p.score_type,
+                p.quota_type,
+                ys.year,
+                ys.kontenjan,
+                ys.yerlesen,
+                ys.taban_puan,
+                ys.basari_sirasi,
+                ys.status
+            FROM programs p
+            INNER JOIN yearly_stats ys ON p.program_id = ys.program_id
+            INNER JOIN (
+                SELECT 
+                    program_id,
+                    COALESCE(
+                        MAX(CASE WHEN year = 2025 THEN year END),
+                        MAX(year)
+                    ) as best_year
+                FROM yearly_stats
+                WHERE taban_puan > 0
+                GROUP BY program_id
+            ) best_years ON ys.program_id = best_years.program_id AND ys.year = best_years.best_year
+            WHERE ys.taban_puan > 0
+        `;
     }
+
+    // Score type filter
     if (filters.scoreType) {
-        filtered = filtered.filter(item => item.scoreType === filters.scoreType);
+        query += ` AND p.score_type = ?`;
+        params.push(filters.scoreType);
     }
+
+    // City filter (Using p.location_city)
     if (filters.city) {
-        const cityFilter = filters.city.toLocaleLowerCase('tr-TR');
-        filtered = filtered.filter(item => item.city.toLocaleLowerCase('tr-TR').includes(cityFilter));
+        query += ` AND p.location_city LIKE ?`;
+        params.push(`%${filters.city}%`);
     }
+
+    // University filter (Using p.university_name)
     if (filters.university) {
-        const uniFilter = filters.university.toLocaleLowerCase('tr-TR');
-        filtered = filtered.filter(item => item.universityName.toLocaleLowerCase('tr-TR').includes(uniFilter));
+        query += ` AND p.university_name LIKE ?`;
+        params.push(`%${filters.university}%`);
     }
+
+    // Department filter
     if (filters.department) {
-        const deptFilter = filters.department.toLocaleLowerCase('tr-TR');
-        // Special case: "Mühendislik" should also match "Muhendisligi"
+        const deptFilter = filters.department;
         if (filters.department === 'Mühendislik') {
-            filtered = filtered.filter(item => {
-                const deptName = item.departmentName.toLocaleLowerCase('tr-TR');
-                return deptName.includes(deptFilter) || deptName.includes('mühendisliği');
-            });
+            query += ` AND (p.program_name LIKE ? OR p.program_name LIKE ?)`;
+            params.push(`%${deptFilter}%`, '%mühendisliği%');
         } else {
-            filtered = filtered.filter(item => item.departmentName.toLocaleLowerCase('tr-TR').includes(deptFilter));
+            query += ` AND p.program_name LIKE ?`;
+            params.push(`%${deptFilter}%`);
         }
     }
+
+    // Quota type filter
     if (filters.quotaType) {
         if (filters.quotaType === 'Devlet') {
-            filtered = filtered.filter(item => item.quotaType === null);
+            query += ` AND p.quota_type IS NULL`;
         } else if (filters.quotaType === 'Vakıf' || filters.quotaType === 'Vakif') {
-            filtered = filtered.filter(item => item.quotaType !== null);
+            query += ` AND p.quota_type IS NOT NULL`;
         }
     }
+
+    // Language filter
     if (filters.language && filters.language.length > 0) {
-        filtered = filtered.filter(item => {
-            // If language is null in data, it means Türkçe
-            // Check if Türkçe is selected and item language is null, or if item language matches selected languages
-            const isTurkce = item.language === null && filters.language!.includes('Türkçe');
-            const matchesOtherLanguage = item.language !== null && filters.language!.includes(item.language);
-            return isTurkce || matchesOtherLanguage;
-        });
+        const hasTurkce = filters.language.includes('Türkçe');
+        const otherLanguages = filters.language.filter((l: string) => l !== 'Türkçe');
+        
+        if (hasTurkce && otherLanguages.length > 0) {
+            query += ` AND (p.language IS NULL OR p.language IN (${otherLanguages.map(() => '?').join(',')}))`;
+            params.push(...otherLanguages);
+        } else if (hasTurkce) {
+            query += ` AND p.language IS NULL`;
+        } else {
+            query += ` AND p.language IN (${otherLanguages.map(() => '?').join(',')})`;
+            params.push(...otherLanguages);
+        }
     }
-    if (filters.searchQuery) {
-        filtered = filtered.filter(item => matchesSearch(item, filters.searchQuery));
-    }
+
+    // Score range filters (Using ys.taban_puan)
     if (filters.minScore !== null) {
-        filtered = filtered.filter(item => item.score >= (filters.minScore as number));
+        query += ` AND ys.taban_puan >= ?`;
+        params.push(filters.minScore);
     }
     if (filters.maxScore !== null) {
-        filtered = filtered.filter(item => item.score <= (filters.maxScore as number));
+        query += ` AND ys.taban_puan <= ?`;
+        params.push(filters.maxScore);
     }
+
+    // Rank range filters (Using ys.basari_sirasi)
     if (filters.minRank !== null) {
-        filtered = filtered.filter(item => item.rank !== null && item.rank >= (filters.minRank as number));
+        query += ` AND ys.basari_sirasi >= ?`;
+        params.push(filters.minRank);
     }
     if (filters.maxRank !== null) {
-        filtered = filtered.filter(item => item.rank !== null && item.rank <= (filters.maxRank as number));
+        query += ` AND ys.basari_sirasi <= ?`;
+        params.push(filters.maxRank);
     }
 
     // YKS Calculation Filtering
     if (yksCalculation) {
-        // Filter by all score types where user has a score and can win
         const scoreTypeMap: Record<string, { score: number; scoreType: string }> = {
             'TYT': { score: yksCalculation.tytYerlesme, scoreType: 'TYT' },
             'SAY': { score: yksCalculation.sayYerlesme, scoreType: 'SAY' },
@@ -182,59 +240,54 @@ export const fetchRankings = async (
             'SÖZ': { score: yksCalculation.sozYerlesme, scoreType: 'SÖZ' },
         };
 
-        // Get all score types where user has a valid score (> 0)
         const availableScores = Object.entries(scoreTypeMap)
             .filter(([_, data]) => data.score > 0);
 
         if (availableScores.length > 0) {
-            // Filter to show universities in any category where user can win
-            filtered = filtered.filter(item => {
-                const userScoreData = availableScores.find(([_, data]) => data.scoreType === item.scoreType);
-                if (!userScoreData) return false;
-                
-                // Show only universities where user's score >= university's score
-                return userScoreData[1].score >= item.score;
+            const scoreConditions = availableScores.map(([_, data]) => {
+                params.push(data.scoreType, data.score);
+                return `(p.score_type = ? AND ys.taban_puan <= ?)`;
             });
+            query += ` AND (${scoreConditions.join(' OR ')})`;
         }
     }
 
     // Apply Sorting
-    // Default sort is Score Descending if nothing selected
     const sortBy = filters.sortBy || 'score';
     const sortOrder = filters.sortOrder || 'desc';
+    
+    let orderBy = '';
+    switch (sortBy) {
+        case 'score':
+            orderBy = `ys.taban_puan ${sortOrder.toUpperCase()}`;
+            break;
+        case 'rank':
+            orderBy = `CASE WHEN ys.basari_sirasi IS NULL THEN 1 ELSE 0 END, ys.basari_sirasi ${sortOrder.toUpperCase()}`;
+            break;
+        case 'quota':
+            orderBy = `ys.kontenjan ${sortOrder.toUpperCase()}`;
+            break;
+        case 'year':
+            orderBy = `ys.year ${sortOrder.toUpperCase()}`;
+            break;
+        default:
+            orderBy = `ys.taban_puan DESC`;
+    }
+    query += ` ORDER BY ${orderBy}`;
 
-    filtered.sort((a, b) => {
-        let valA: any = a[sortBy as keyof RankingItem];
-        let valB: any = b[sortBy as keyof RankingItem];
+    // Execute query to get matching rows (search is now done in SQL)
+    const rows = await executeQuery<RankingRow>(query, params);
+    
+    // Convert to RankingItem
+    const allItems = rows.map(rowToRankingItem);
 
-        // Handle null values - place them at the end
-        if (valA === null && valB === null) return 0;
-        if (valA === null) return 1; // null goes to end
-        if (valB === null) return -1; // null goes to end
-
-        if (typeof valA === 'string') {
-            valA = valA.toLocaleLowerCase('tr-TR');
-            valB = valB.toLocaleLowerCase('tr-TR');
-            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-            return 0;
-        } else {
-            // Numbers
-            if (sortOrder === 'asc') {
-                return valA - valB;
-            } else {
-                return valB - valA;
-            }
-        }
-    });
-
-    // Pagination
+    // Pagination (now done on already filtered results)
     const limit = 20;
     const start = pageParam * limit;
     const end = start + limit;
-    const pageData = filtered.slice(start, end);
+    const pageData = allItems.slice(start, end);
 
-    const nextCursor = end < filtered.length ? pageParam + 1 : null;
+    const nextCursor = end < allItems.length ? pageParam + 1 : null;
 
     return {
         data: pageData,
@@ -243,20 +296,36 @@ export const fetchRankings = async (
 };
 
 export const fetchFilterOptions = async (): Promise<FilterOptions> => {
-    // Extract unique options from processedData and raw data
-    const rawData = application as unknown as RawRankingItem[];
-    
-    // Extract all unique years from all programs
-    const allYears = new Set<number>();
-    rawData.forEach(item => {
-        item.years.forEach(yearData => allYears.add(yearData.year));
-    });
-    const years = Array.from(allYears).sort((a, b) => b - a);
-    
-    const scoreTypes = Array.from(new Set(processedData.map(d => d.scoreType))).sort();
-    const cities = Array.from(new Set(processedData.map(d => d.city))).sort();
-    const universities = Array.from(new Set(processedData.map(d => d.universityName))).sort();
-    const departments = Array.from(new Set(processedData.map(d => d.departmentName))).sort();
+    // Query unique years from yearly_stats
+    const yearRows = await executeQuery<{ year: number }>(
+        `SELECT DISTINCT year FROM yearly_stats WHERE taban_puan > 0 ORDER BY year DESC`
+    );
+    const years = yearRows.map((row: { year: number }) => row.year);
+
+    // Query unique score types
+    const scoreTypeRows = await executeQuery<{ score_type: string }>(
+        `SELECT DISTINCT score_type FROM programs ORDER BY score_type`
+    );
+    const scoreTypes = scoreTypeRows.map((row: { score_type: string }) => row.score_type);
+
+    // Query unique cities from programs table
+    const cityRows = await executeQuery<{ location_city: string }>(
+        `SELECT DISTINCT location_city FROM programs WHERE location_city IS NOT NULL AND location_city != '' ORDER BY location_city`
+    );
+    const cities = cityRows.map((row: { location_city: string }) => row.location_city);
+
+    // Query unique universities from programs table
+    const universityRows = await executeQuery<{ university_name: string }>(
+        `SELECT DISTINCT university_name FROM programs WHERE university_name IS NOT NULL AND university_name != '' ORDER BY university_name`
+    );
+    const universities = universityRows.map((row: { university_name: string }) => row.university_name);
+
+    // Query unique departments
+    const departmentRows = await executeQuery<{ program_name: string }>(
+        `SELECT DISTINCT program_name FROM programs ORDER BY program_name`
+    );
+    const departments = departmentRows.map((row: { program_name: string }) => row.program_name);
+
     const quotaTypes = ['Devlet', 'Vakıf'];
 
     return {
@@ -270,27 +339,79 @@ export const fetchFilterOptions = async (): Promise<FilterOptions> => {
 };
 
 export const fetchRankingDetails = async (id: string): Promise<RankingDetail> => {
-    const item = processedData.find(d => d.id === id);
-    if (!item) {
+    const programId = parseInt(id, 10);
+    if (isNaN(programId)) {
+        throw new Error('Invalid program ID');
+    }
+
+    // Get program info with latest year data
+    const programQuery = `
+        SELECT 
+            p.program_id,
+            p.university_id,
+            p.university_name,
+            p.location_city,
+            NULL AS campus,
+            p.university_type,
+            p.faculty,
+            p.program_name,
+            p.language,
+            p.duration_years,
+            p.score_type,
+            p.quota_type,
+            ys.year,
+            ys.kontenjan,
+            ys.yerlesen,
+            ys.taban_puan,
+            ys.basari_sirasi,
+            ys.status
+        FROM programs p
+        INNER JOIN yearly_stats ys ON p.program_id = ys.program_id
+        INNER JOIN (
+            SELECT 
+                program_id,
+                COALESCE(
+                    MAX(CASE WHEN year = 2025 THEN year END),
+                    MAX(year)
+                ) as best_year
+            FROM yearly_stats
+            WHERE program_id = ? AND taban_puan > 0
+            GROUP BY program_id
+        ) best_years ON ys.program_id = best_years.program_id AND ys.year = best_years.best_year
+        WHERE p.program_id = ? AND ys.taban_puan > 0
+    `;
+
+    const programRow = await executeQuerySingle<RankingRow>(programQuery, [programId, programId]);
+    
+    if (!programRow) {
         throw new Error('Ranking not found');
     }
 
-    // Find the raw data item to get history
-    const rawData = application as unknown as RawRankingItem[];
-    const rawItem = rawData.find(d => d.program_id.toString() === id);
-    
-    // Build history from years array, sorted by year descending
-    const history = rawItem 
-        ? rawItem.years
-            .sort((a, b) => b.year - a.year)
-            .map(yearData => ({
-                year: yearData.year,
-                score: yearData.taban_puan,
-                rank: yearData.basari_sirasi,
-                yerlesen: yearData.yerlesen,
-                kontenjan: yearData.kontenjan,
-            }))
-        : [];
+    const item = rowToRankingItem(programRow);
+
+    // Get all years for history
+    const historyRows = await executeQuery<YearRow>(
+        `SELECT 
+            program_id,
+            year, 
+            kontenjan, 
+            yerlesen, 
+            taban_puan, 
+            basari_sirasi, 
+            status 
+         FROM yearly_stats 
+         WHERE program_id = ? AND taban_puan > 0 
+         ORDER BY year DESC`,
+        [programId]
+    );
+
+    const history = historyRows.map((yearData: YearRow) => ({
+        year: yearData.year,
+        score: yearData.taban_puan,
+        rank: yearData.basari_sirasi,
+        yerlesen: yearData.yerlesen,
+        kontenjan: yearData.kontenjan,
+    }));
 
     return {
         ...item,
@@ -301,238 +422,155 @@ export const fetchRankingDetails = async (id: string): Promise<RankingDetail> =>
 };
 
 /**
- * Estimates the ranking (basari siralamasi) based on a given yerleştirme puanı (placement score) and score type
- * 
- * IMPORTANT:
- * - Only compares programs with the exact same score_type (TYT with TYT, SAY with SAY, etc.)
- * - Compares yerleştirme puanı values: user's yerleştirme puanı vs program's taban_puan (which is also yerleştirme puanı)
- * - Uses only 2025 data for consistency
- * - Each exam type (TYT, SAY, EA, SÖZ, DİL) has its own ranking scale
- * 
- * @param yerlesmePuani The user's yerleştirme puanı (placement score) for the specific exam type
- * @param scoreType The score type (TYT, SAY, EA, SÖZ, DİL) - must match exactly with JSON score_type values
- * @returns Estimated ranking or null if cannot be estimated
+ * Estimates the ranking (basari siralamasi) based on a given yerleştirme puanı
  */
-export const estimateRanking = (yerlesmePuani: number, scoreType: string): number | null => {
+export const estimateRanking = async (yerlesmePuani: number, scoreType: string): Promise<number | null> => {
     if (yerlesmePuani <= 0) return null;
     if (!scoreType || scoreType.trim() === '') return null;
 
-    // Special handling for TYT: use Y-TYT (yerleştirme puanı, OBP dahil) band chart instead of JSON data
+    // Special handling for TYT (This logic remains unchanged as it's hardcoded)
     if (scoreType === 'TYT') {
-        // Optimized anchor points from latest 2025 Y-TYT band chart (puan → hedef/gerçek sıralama):
-        //  857      → 527.20   (Elit Zirve)
-        //  2.878    → 513.07   (Derece Grubu)
-        //  7.342    → 498.94   (Güvenli Liman)
-        // 31.241    → 466.14   (Kırılma 1)
-        // 73.211    → 437.87   (Yığılmanın ayak sesleri)
-        // 138.261   → 409.59   (Ortalama üstü rekabet)
-        // 619.647   → 321.67   (Orta Sınıf)
-        // 1.694.681 → 239.72   (Rekabetin bittiği yer)
-        // 1.892.918 → 225.88   (Baraj üstü son bölge)
         const anchors: { puan: number; rank: number }[] = [
-            { puan: 527.20,   rank: 857 },       // Ref: 527,20 → 857 (Elit Zirve)
-            { puan: 513.07,   rank: 2_878 },     // Ref: 513,07 → 2.878 (Derece Grubu)
-            { puan: 498.94,   rank: 7_342 },     // Ref: 498,94 → 7.342 (Güvenli Liman)
-            { puan: 466.14,   rank: 31_241 },    // Ref: 466,14 → 31.241 (Kırılma 1)
-            { puan: 437.87,   rank: 73_211 },    // Ref: 437,87 → 73.211 (Yığılmanın ayak sesleri)
-            { puan: 409.59,   rank: 138_261 },   // Ref: 409,59 → 138.261 (Ortalama üstü rekabet)
-            { puan: 321.67,   rank: 619_647 },   // Ref: 321,67 → 619.647 (Orta Sınıf)
-            { puan: 239.72,   rank: 1_694_681 }, // Ref: 239,72 → 1.694.681 (Rekabetin bittiği yer)
-            { puan: 225.88,   rank: 1_892_918 }, // Ref: 225,88 → 1.892.918 (Baraj üstü son bölge)
+            { puan: 527.20,   rank: 857 },
+            { puan: 513.07,   rank: 2_878 },
+            { puan: 498.94,   rank: 7_342 },
+            { puan: 466.14,   rank: 31_241 },
+            { puan: 437.87,   rank: 73_211 },
+            { puan: 409.59,   rank: 138_261 },
+            { puan: 321.67,   rank: 619_647 },
+            { puan: 239.72,   rank: 1_694_681 },
+            { puan: 225.88,   rank: 1_892_918 },
         ];
 
-        // Sort anchors by puan descending (higher score = better rank)
         anchors.sort((a, b) => b.puan - a.puan);
-
         const best = anchors[0];
         const worst = anchors[anchors.length - 1];
 
-        // If score is higher than best anchor, extrapolate towards a better (lower) rank using the first segment
         if (yerlesmePuani >= best.puan) {
             const second = anchors[1];
             const scoreRange = best.puan - second.puan;
             const rankRange = second.rank - best.rank;
             const extra = yerlesmePuani - best.puan;
-
             if (scoreRange > 0) {
-                const slope = rankRange / scoreRange; // rank change per 1 puan
-                const est = best.rank + slope * (-extra); // higher puan → lower rank
+                const slope = rankRange / scoreRange;
+                const est = best.rank + slope * (-extra);
                 return Math.max(1, Math.round(est));
             }
             return best.rank;
         }
 
-        // If score is lower than worst anchor, extrapolate towards worse (higher) rank using last segment
         if (yerlesmePuani <= worst.puan) {
             const beforeWorst = anchors[anchors.length - 2];
             const scoreRange = beforeWorst.puan - worst.puan;
             const rankRange = worst.rank - beforeWorst.rank;
             const extra = worst.puan - yerlesmePuani;
-
             if (scoreRange > 0) {
-                const slope = rankRange / scoreRange; // rank change per 1 puan
-                const est = worst.rank + slope * (extra); // lower puan → higher rank
+                const slope = rankRange / scoreRange;
+                const est = worst.rank + slope * (extra);
                 return Math.max(1, Math.round(est));
             }
             return worst.rank;
         }
 
-        // Otherwise, find two neighboring anchors around the user's score and interpolate rank linearly
         for (let i = 0; i < anchors.length - 1; i++) {
             const upper = anchors[i];
             const lower = anchors[i + 1];
             if (yerlesmePuani <= upper.puan && yerlesmePuani >= lower.puan) {
                 const scoreRange = upper.puan - lower.puan;
-                const rankRange = lower.rank - upper.rank; // rank worsens as score decreases
+                const rankRange = lower.rank - upper.rank;
                 const userDelta = upper.puan - yerlesmePuani;
-
-                if (scoreRange <= 0.0001) {
-                    return upper.rank;
-                }
-
+                if (scoreRange <= 0.0001) return upper.rank;
                 const ratio = userDelta / scoreRange;
                 const est = upper.rank + rankRange * ratio;
                 return Math.max(1, Math.round(est));
             }
         }
-
-        // Fallback (should not hit often)
         return null;
     }
 
-    const rawData = application as unknown as RawRankingItem[];
-    
-    // Filter programs by exact score_type match - this is critical for accurate ranking estimation
-    // Each exam type (TYT, SAY, EA, SÖZ, DİL) has its own yerleştirme puanı scale and ranking
-    // Only programs with the same score_type should be compared
-    // taban_puan in the JSON is the minimum yerleştirme puanı needed to get into that program (also a yerleştirme puanı)
-    const relevantPrograms: Array<{ tabanPuan: number; basariSirasi: number }> = [];
-    
-    rawData.forEach((item) => {
-        // Strict comparison: only include programs with exact score_type match
-        // This ensures TYT scores are only compared with TYT programs, SAY with SAY, etc.
-        if (item.score_type !== scoreType) {
-            return; // Skip programs with different score_type
-        }
-        
-        // Always use 2025 data only - skip programs without 2025 data
-        const year2025 = item.years.find(y => y.year === 2025);
-        if (!year2025) {
-            return; // Skip programs that don't have 2025 data
-        }
-        
-        // Only include programs with valid 2025 taban_puan and basari_sirasi
-        if (year2025.taban_puan > 0 && year2025.basari_sirasi !== null) {
-            relevantPrograms.push({
-                tabanPuan: year2025.taban_puan,
-                basariSirasi: year2025.basari_sirasi,
-            });
-        }
-    });
+    // UPDATED QUERY: Use 'yearly_stats' table with Turkish column names
+    const relevantProgramsRows = await executeQuery<{ taban_puan: number; basari_sirasi: number }>(
+        `SELECT ys.taban_puan, ys.basari_sirasi
+         FROM programs p
+         INNER JOIN yearly_stats ys ON p.program_id = ys.program_id
+         WHERE p.score_type = ? 
+           AND ys.year = 2025
+           AND ys.taban_puan > 0
+           AND ys.basari_sirasi IS NOT NULL`,
+        [scoreType]
+    );
 
-    // Validate that we have programs with matching score_type
+    const relevantPrograms: Array<{ tabanPuan: number; basariSirasi: number }> = relevantProgramsRows.map((row: { taban_puan: number; basari_sirasi: number }) => ({
+        tabanPuan: row.taban_puan,
+        basariSirasi: row.basari_sirasi,
+    }));
+
     if (relevantPrograms.length === 0) {
-        // No programs found with the specified score_type - this could indicate:
-        // 1. Invalid score_type parameter
-        // 2. No data available for this score_type
         return null;
     }
 
-    // Sort by taban_puan (yerleştirme puanı) descending (higher scores = better ranks)
-    // All programs in this array have been filtered to match the exact score_type
-    // This ensures TYT yerleştirme puanı is only compared with TYT taban_puan, SAY with SAY, etc.
     relevantPrograms.sort((a, b) => b.tabanPuan - a.tabanPuan);
 
-    // First, check if there's a program with taban_puan very close to user's yerleştirme puanı
-    // If found and close enough, return that program's basari_sirasi directly
-    const closeMatchThreshold = 0.5; // Consider it a match if within 0.5 points
+    const closeMatchThreshold = 0.5;
     let closestMatch: { tabanPuan: number; basariSirasi: number; diff: number } | null = null;
     
     for (const program of relevantPrograms) {
         const diff = Math.abs(program.tabanPuan - yerlesmePuani);
         if (diff <= closeMatchThreshold) {
-            // If this is the first match or closer than previous match, use it
             if (!closestMatch || diff < closestMatch.diff) {
                 closestMatch = { tabanPuan: program.tabanPuan, basariSirasi: program.basariSirasi, diff };
             }
         }
     }
     
-    // If we found a close match, return its basari_sirasi directly
     if (closestMatch) {
         return closestMatch.basariSirasi;
     }
 
-    // If no close match found, proceed with interpolation
-    // Find the closest programs to the user's yerleştirme puanı for interpolation
-    // We're comparing yerleştirme puanı values: user's yerleştirme puanı vs program's taban_puan (yerleştirme puanı)
-    // closestLower: program with highest taban_puan (yerleştirme puanı) that is <= user's yerleştirme puanı (user can get into this)
-    // closestHigher: program with lowest taban_puan (yerleştirme puanı) that is > user's yerleştirme puanı (user cannot get into this)
     let closestLower: { tabanPuan: number; basariSirasi: number } | null = null;
     let closestHigher: { tabanPuan: number; basariSirasi: number } | null = null;
 
     for (const program of relevantPrograms) {
-        // Compare yerleştirme puanı values: user's yerleştirme puanı vs program's taban_puan (yerleştirme puanı)
         if (program.tabanPuan <= yerlesmePuani) {
-            // User's yerleştirme puanı is >= this program's taban_puan (yerleştirme puanı), so they can get in
-            // We want the highest taban_puan (yerleştirme puanı) that user can still get into
             if (!closestLower || program.tabanPuan > closestLower.tabanPuan) {
                 closestLower = { tabanPuan: program.tabanPuan, basariSirasi: program.basariSirasi };
             }
         } else {
-            // User's yerleştirme puanı is < this program's taban_puan (yerleştirme puanı), so they cannot get in
-            // We want the lowest taban_puan (yerleştirme puanı) that user cannot get into
             if (!closestHigher || program.tabanPuan < closestHigher.tabanPuan) {
                 closestHigher = { tabanPuan: program.tabanPuan, basariSirasi: program.basariSirasi };
             }
         }
     }
 
-    // If we have both lower and higher bounds, interpolate between them for accurate ranking
-    // This ensures the ranking changes dynamically as the yerleştirme puanı changes
     if (closestLower && closestHigher) {
-        const scoreDiff = closestHigher.tabanPuan - closestLower.tabanPuan; // Difference in yerleştirme puanı
+        const scoreDiff = closestHigher.tabanPuan - closestLower.tabanPuan;
         const rankDiff = closestHigher.basariSirasi - closestLower.basariSirasi;
-        const userScoreDiff = yerlesmePuani - closestLower.tabanPuan; // User's yerleştirme puanı difference
+        const userScoreDiff = yerlesmePuani - closestLower.tabanPuan;
         
         if (Math.abs(scoreDiff) > 0.001) {
-            // Linear interpolation: higher yerleştirme puanı = better (lower) rank
-            // Since ranks are in ascending order (1 is best, higher number is worse)
-            // and yerleştirme puanı values are in descending order (higher score is better)
-            // we interpolate: rank = lowerRank + (rankDiff * (userScoreDiff / scoreDiff))
             const estimatedRank = closestLower.basariSirasi + (rankDiff * (userScoreDiff / scoreDiff));
             return Math.max(1, Math.round(estimatedRank));
         } else {
-            // If scores are very close, use the average rank
             return Math.round((closestLower.basariSirasi + closestHigher.basariSirasi) / 2);
         }
     }
 
-    // If we only have a lower bound (user's score is very high), cap at the best available rank
-    // This avoids over-optimistic extrapolation when there is no data beyond the highest taban_puan (e.g. TYT > 443)
     if (closestLower && !closestHigher) {
-        // Best (minimum) basariSirasi among all programs for this scoreType
         const bestProgram = relevantPrograms.reduce((best, p) =>
             p.basariSirasi < best.basariSirasi ? p : best
         , relevantPrograms[0]);
-
         return bestProgram.basariSirasi;
     }
 
-    // If we only have a higher bound (user's score is very low), estimate based on score difference
     if (closestHigher) {
-        // Find the next program with higher taban_puan to estimate ranking trend
         const programsWithHigherScore = relevantPrograms.filter(p => p.tabanPuan > closestHigher!.tabanPuan);
         if (programsWithHigherScore.length > 0) {
-            // Get the program with the lowest score among those with higher scores
             const nextHigher = programsWithHigherScore.reduce((min, p) => p.tabanPuan < min.tabanPuan ? p : min);
             const scoreDiff = nextHigher.tabanPuan - closestHigher.tabanPuan;
             const rankDiff = nextHigher.basariSirasi - closestHigher.basariSirasi;
             const userScoreDiff = closestHigher.tabanPuan - yerlesmePuani;
             
             if (Math.abs(scoreDiff) > 0.001) {
-                // Extrapolate: user has lower score than closestHigher, so worse (higher) rank
-                // Lower score means higher rank, so we add
                 const estimatedRank = closestHigher.basariSirasi + (rankDiff * (userScoreDiff / scoreDiff));
                 return Math.max(1, Math.round(estimatedRank));
             }

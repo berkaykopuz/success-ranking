@@ -193,7 +193,7 @@ export const FilterBar = () => {
             {(selectedYksCalculation || year || city || university || quotaType || 
               (language && language.length > 0) || minScore !== null || maxScore !== null || 
               minRank !== null || maxRank !== null || sortBy) && (
-                <View className="mt-3 px-4 mb-2">
+                <View className="mt-1 px-4 mb-2">
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}

@@ -242,6 +242,11 @@ export default function YksNetScreen() {
   const [calculationName, setCalculationName] = useState('');
   const [isInterstitialLoaded, setIsInterstitialLoaded] = useState(false);
   const [lastAdShownAt, setLastAdShownAt] = useState<number | null>(null);
+  const [tytEstimatedRank, setTytEstimatedRank] = useState<number | null>(null);
+  const [sayEstimatedRank, setSayEstimatedRank] = useState<number | null>(null);
+  const [eaEstimatedRank, setEaEstimatedRank] = useState<number | null>(null);
+  const [sozEstimatedRank, setSozEstimatedRank] = useState<number | null>(null);
+  const [dilEstimatedRank, setDilEstimatedRank] = useState<number | null>(null);
 
   // Load interstitial ad for this screen
   useEffect(() => {
@@ -435,13 +440,13 @@ export default function YksNetScreen() {
     return turkceNet >= 0.5 || matematikNet >= 0.5;
   }, [turkceNet, matematikNet]);
 
-  // TYT Ham Puan
+  // TYT Ham Puan (Calculate from user inputs)
   const tytHamPuan = useMemo(() => {
     if (!passesBaraj) return 0;
     return calculateTYTHamPuan(turkceNet, matematikNet, sosyalNet, fenNet);
   }, [passesBaraj, turkceNet, matematikNet, sosyalNet, fenNet]);
 
-  // AYT Ham Puanları (2025 formülü)
+  // AYT Ham Puanları (2025 formülü) - Calculate from user inputs
   const sayHamPuan = useMemo(() => {
     if (!passesBaraj) return 0;
     return calculateSAYHamPuan(
@@ -487,7 +492,7 @@ export default function YksNetScreen() {
     );
   }, [passesBaraj, turkceNet, matematikNet, sosyalNet, fenNet, aytEdebiyatNet, aytTarih1Net, aytCografya1Net, aytTarih2Net, aytCografya2Net, aytFelsefeNet, aytDinNet]);
 
-  // DİL Ham Puan
+  // DİL Ham Puan (Calculate from user inputs)
   const dilHamPuan = useMemo(() => {
     if (!passesBaraj) return 0;
     return calculateDILHamPuan(
@@ -515,37 +520,108 @@ export default function YksNetScreen() {
   }, [diplomaNotu, obpKatsayisi]);
 
   // Yerleştirme Puanları (Ham Puan + Diploma Notu * Katsayı)
+  // These are calculated from user inputs and used to fetch Tahmini Siralama from programs table
   const tytYerlesme = useMemo(() => tytHamPuan + obpEkPuan, [tytHamPuan, obpEkPuan]);
   const sayYerlesme = useMemo(() => sayHamPuan + obpEkPuan, [sayHamPuan, obpEkPuan]);
   const eaYerlesme = useMemo(() => eaHamPuan + obpEkPuan, [eaHamPuan, obpEkPuan]);
   const sozYerlesme = useMemo(() => sozHamPuan + obpEkPuan, [sozHamPuan, obpEkPuan]);
   const dilYerlesme = useMemo(() => dilHamPuan + obpEkPuan, [dilHamPuan, obpEkPuan]);
 
-  // Tahmini Başarı Sıralamaları
-  const tytEstimatedRank = useMemo(() => {
-    if (!passesBaraj || tytYerlesme <= 0) return null;
-    return estimateRanking(tytYerlesme, 'TYT');
-  }, [passesBaraj, tytYerlesme]);
+  // Fetch Tahmini Sıralama data when yerleştirme puanları change
+  useEffect(() => {
+    const fetchEstimatedRanks = async () => {
+      if (!passesBaraj) {
+        setTytEstimatedRank(null);
+        setSayEstimatedRank(null);
+        setEaEstimatedRank(null);
+        setSozEstimatedRank(null);
+        setDilEstimatedRank(null);
+        return;
+      }
 
-  const sayEstimatedRank = useMemo(() => {
-    if (!passesBaraj || sayYerlesme <= 0 || (aytMatNet === 0 && aytFizikNet === 0 && aytKimyaNet === 0 && aytBiyolojiNet === 0)) return null;
-    return estimateRanking(sayYerlesme, 'SAY');
-  }, [passesBaraj, sayYerlesme, aytMatNet, aytFizikNet, aytKimyaNet, aytBiyolojiNet]);
+      // TYT Estimated Rank
+      if (tytYerlesme > 0) {
+        try {
+          const rank = await estimateRanking(tytYerlesme, 'TYT');
+          setTytEstimatedRank(rank);
+        } catch (error) {
+          console.error('Error estimating TYT rank:', error);
+          setTytEstimatedRank(null);
+        }
+      } else {
+        setTytEstimatedRank(null);
+      }
 
-  const eaEstimatedRank = useMemo(() => {
-    if (!passesBaraj || eaYerlesme <= 0 || (aytMatNet === 0 && aytEdebiyatNet === 0 && aytTarih1Net === 0 && aytCografya1Net === 0)) return null;
-    return estimateRanking(eaYerlesme, 'EA');
-  }, [passesBaraj, eaYerlesme, aytMatNet, aytEdebiyatNet, aytTarih1Net, aytCografya1Net]);
+      // SAY Estimated Rank
+      if (sayYerlesme > 0 && (aytMatNet > 0 || aytFizikNet > 0 || aytKimyaNet > 0 || aytBiyolojiNet > 0)) {
+        try {
+          const rank = await estimateRanking(sayYerlesme, 'SAY');
+          setSayEstimatedRank(rank);
+        } catch (error) {
+          console.error('Error estimating SAY rank:', error);
+          setSayEstimatedRank(null);
+        }
+      } else {
+        setSayEstimatedRank(null);
+      }
 
-  const sozEstimatedRank = useMemo(() => {
-    if (!passesBaraj || sozYerlesme <= 0 || (aytEdebiyatNet === 0 && aytTarih1Net === 0 && aytCografya1Net === 0)) return null;
-    return estimateRanking(sozYerlesme, 'SÖZ');
-  }, [passesBaraj, sozYerlesme, aytEdebiyatNet, aytTarih1Net, aytCografya1Net]);
+      // EA Estimated Rank
+      if (eaYerlesme > 0 && (aytMatNet > 0 || aytEdebiyatNet > 0 || aytTarih1Net > 0 || aytCografya1Net > 0)) {
+        try {
+          const rank = await estimateRanking(eaYerlesme, 'EA');
+          setEaEstimatedRank(rank);
+        } catch (error) {
+          console.error('Error estimating EA rank:', error);
+          setEaEstimatedRank(null);
+        }
+      } else {
+        setEaEstimatedRank(null);
+      }
 
-  const dilEstimatedRank = useMemo(() => {
-    if (!passesBaraj || dilYerlesme <= 0 || aytYdtNet === 0) return null;
-    return estimateRanking(dilYerlesme, 'DİL');
-  }, [passesBaraj, dilYerlesme, aytYdtNet]);
+      // SÖZ Estimated Rank
+      if (sozYerlesme > 0 && (aytEdebiyatNet > 0 || aytTarih1Net > 0 || aytCografya1Net > 0)) {
+        try {
+          const rank = await estimateRanking(sozYerlesme, 'SÖZ');
+          setSozEstimatedRank(rank);
+        } catch (error) {
+          console.error('Error estimating SÖZ rank:', error);
+          setSozEstimatedRank(null);
+        }
+      } else {
+        setSozEstimatedRank(null);
+      }
+
+      // DİL Estimated Rank
+      if (dilYerlesme > 0 && aytYdtNet > 0) {
+        try {
+          const rank = await estimateRanking(dilYerlesme, 'DİL');
+          setDilEstimatedRank(rank);
+        } catch (error) {
+          console.error('Error estimating DİL rank:', error);
+          setDilEstimatedRank(null);
+        }
+      } else {
+        setDilEstimatedRank(null);
+      }
+    };
+
+    fetchEstimatedRanks();
+  }, [
+    passesBaraj,
+    tytYerlesme,
+    sayYerlesme,
+    eaYerlesme,
+    sozYerlesme,
+    dilYerlesme,
+    aytMatNet,
+    aytFizikNet,
+    aytKimyaNet,
+    aytBiyolojiNet,
+    aytEdebiyatNet,
+    aytTarih1Net,
+    aytCografya1Net,
+    aytYdtNet,
+  ]);
 
   const handleSave = () => {
     if (!passesBaraj) {
