@@ -1031,7 +1031,7 @@ export default function KisiselScreen() {
                         {isEditingSAY ? (
                             <>
                                 <EditableSectionRow
-                                    label="AYT Matematik"
+                                    label="Matematik"
                                     help=""
                                     value={editedSAYValues.aytMatematik || selectedCalculation.aytValues.aytMatematik}
                                     onChangeCorrect={(text) => setEditedSAYValues(prev => ({
@@ -1090,7 +1090,7 @@ export default function KisiselScreen() {
                         ) : (
                             <>
                                 <ReadOnlySectionRow
-                                    label="AYT Matematik"
+                                    label="Matematik"
                                     help=""
                                     value={selectedCalculation.aytValues.aytMatematik}
                                 />
@@ -1170,7 +1170,7 @@ export default function KisiselScreen() {
                         {isEditingEA ? (
                             <>
                                 <EditableSectionRow
-                                    label="AYT Matematik"
+                                    label="Matematik"
                                     help=""
                                     value={editedEAValues.aytMatematik || selectedCalculation.aytValues.aytMatematik}
                                     onChangeCorrect={(text) => setEditedEAValues(prev => ({
@@ -1229,7 +1229,7 @@ export default function KisiselScreen() {
                         ) : (
                             <>
                                 <ReadOnlySectionRow
-                                    label="AYT Matematik"
+                                    label="Matematik"
                                     help=""
                                     value={selectedCalculation.aytValues.aytMatematik}
                                 />
@@ -2422,10 +2422,10 @@ function ComparisonChart({ calculations, type }: ComparisonChartProps) {
         subjects = ['Türkçe', 'Sosyal', 'Matematik', 'Fen'];
         maxNets = [40, 20, 40, 20];
     } else if (type === 'say') {
-        subjects = ['AYT Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
+        subjects = ['Matematik', 'Fizik', 'Kimya', 'Biyoloji'];
         maxNets = [40, 14, 13, 13];
     } else if (type === 'ea') {
-        subjects = ['AYT Matematik', 'Edebiyat', 'Tarih-1', 'Coğrafya-1'];
+        subjects = ['Matematik', 'Edebiyat', 'Tarih-1', 'Coğrafya-1'];
         maxNets = [40, 24, 10, 6];
     } else if (type === 'soz') {
         subjects = ['Edebiyat', 'Tarih-1', 'Coğ-1', 'Tarih-2', 'Coğ-2', 'Felsefe', 'Din'];

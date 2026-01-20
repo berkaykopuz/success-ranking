@@ -59,7 +59,7 @@ const TYT_SUBJECT_NAMES: Record<TYTSectionKey, string> = {
 };
 
 const AYT_SUBJECT_NAMES: Record<AYTSectionKey, string> = {
-  aytMatematik: 'AYT Matematik',
+  aytMatematik: 'Matematik',
   aytFizik: 'AYT Fizik',
   aytKimya: 'AYT Kimya',
   aytBiyoloji: 'AYT Biyoloji',
@@ -775,7 +775,7 @@ export default function YksNetScreen() {
           {sectionsOpen.say && (
             <>
               <SectionRow
-                label="AYT Matematik"
+                label="Matematik"
                 help=""
                 value={aytValues.aytMatematik}
                 onChangeCorrect={(t) => handleAytChange('aytMatematik', 'correct', t)}
@@ -841,7 +841,7 @@ export default function YksNetScreen() {
           {sectionsOpen.ea && (
             <>
               <SectionRow
-                label="AYT Matematik"
+                label="Matematik"
                 help=""
                 value={aytValues.aytMatematik}
                 onChangeCorrect={(t) => handleAytChange('aytMatematik', 'correct', t)}
