@@ -9,7 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.berkaykopuz1.successranking",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized ads to you."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -46,7 +51,8 @@
       [
         "react-native-google-mobile-ads",
         {
-          "androidAppId": "ca-app-pub-7326975715449797~4890783806"
+          "androidAppId": "ca-app-pub-7326975715449797~4890783806",
+          "iosAppId": "ca-app-pub-7326975715449797~4890783806"
         }
       ],
       "expo-sqlite"

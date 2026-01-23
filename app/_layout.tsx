@@ -36,6 +36,10 @@ export default function RootLayout() {
       .initialize()
       .then(adapterStatuses => {
         console.log('AdMob initialized', adapterStatuses);
+      })
+      .catch(error => {
+        console.error('AdMob initialization error:', error);
+        // Don't crash the app if ads fail to initialize
       });
   }, []);
 

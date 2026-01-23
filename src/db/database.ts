@@ -24,11 +24,12 @@ const getDocumentDirectory = (): string => {
 
 /**
  * Get the internal database path
+ * expo-sqlite stores databases in documentDirectory/SQLite/ on iOS
  */
 const getDatabasePath = (): string => {
   const documentDir = getDocumentDirectory();
-  const sqlDir = `${documentDir}${SQLITE_DIR}`;
-  return `${sqlDir}/${DB_NAME}`;
+  const sqlDir = `${documentDir}${SQLITE_DIR}/`;
+  return `${sqlDir}${DB_NAME}`;
 };
 
 /**
@@ -60,7 +61,7 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
     try {
       const internalDbPath = getDatabasePath();
       const documentDir = getDocumentDirectory();
-      const sqlDir = `${documentDir}${SQLITE_DIR}`;
+      const sqlDir = `${documentDir}${SQLITE_DIR}/`;
 
       // Check if database already exists
       const fileInfo = await FileSystem.getInfoAsync(internalDbPath);
@@ -68,7 +69,7 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
       if (!fileInfo.exists) {
         console.log('[Database] Database not found. Initializing from assets...');
 
-        // Ensure SQLite directory exists
+        // Ensure SQLite directory exists (expo-sqlite uses documentDirectory/SQLite/)
         const dirInfo = await FileSystem.getInfoAsync(sqlDir);
         if (!dirInfo.exists) {
           await FileSystem.makeDirectoryAsync(sqlDir, { intermediates: true });
@@ -83,7 +84,8 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
           throw new Error('Failed to download database asset: localUri is null');
         }
 
-        // Copy database from assets to internal storage
+        // Copy database from assets to SQLite directory
+        // expo-sqlite looks for databases in documentDirectory/SQLite/ on iOS
         await FileSystem.copyAsync({
           from: asset.localUri,
           to: internalDbPath,
@@ -94,12 +96,13 @@ export const getDatabase = async (): Promise<SQLite.SQLiteDatabase> => {
         console.log('[Database] Database found at:', internalDbPath);
       }
 
-      // Open database connection using the new async API with full path
-      // Since we're using a custom location, we need to use the full path
-      const db = await SQLite.openDatabaseAsync(internalDbPath);
+      // Open database connection using just the database name
+      // expo-sqlite automatically looks in documentDirectory/SQLite/ for the database
+      // Passing a full path is not supported - only the database name
+      const db = await SQLite.openDatabaseAsync(DB_NAME);
       
       // Verify database is accessible
-      await db.execAsync('SELECT 1');
+      await db.getFirstAsync('SELECT 1 as test');
       
       databaseInstance = db;
       isInitialized = true;
