@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, Text, TextInput, View, TouchableOpacity, Modal, Pressable, Alert } from 'react-native';
+import { ScrollView, Text, TextInput, View, TouchableOpacity, Modal, Pressable, Alert, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUserStore } from '../../src/store/userStore';
 import { Save, ChevronDown, ChevronUp } from 'lucide-react-native';
@@ -224,7 +224,10 @@ const calculateDILHamPuan = (
 // Interstitial ad configuration
 const INTERSTITIAL_AD_UNIT_ID = __DEV__
   ? TestIds.INTERSTITIAL
-  : 'ca-app-pub-7326975715449797/6395081945';
+  : Platform.select({
+      ios: 'ca-app-pub-7326975715449797/7002894483', // Replace with your iOS interstitial ad unit ID
+      android: 'ca-app-pub-7326975715449797/6395081945',
+    }) || 'ca-app-pub-7326975715449797/6395081945';
 
 const interstitial = InterstitialAd.createForAdRequest(INTERSTITIAL_AD_UNIT_ID, {
   requestNonPersonalizedAdsOnly: true,

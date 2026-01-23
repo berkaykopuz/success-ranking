@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy - YKS Sıralamam</title>
+    <title>Privacy Policy / Gizlilik Politikası - YKS Sıralamam</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -14,6 +14,35 @@
             padding: 20px;
             background-color: #f9f9f9;
         }
+
+        /* Language Switcher Styles */
+        .lang-switch {
+            text-align: right;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 15px;
+        }
+        .lang-btn {
+            background-color: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            color: #2c3e50;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 4px;
+            margin-left: 5px;
+            transition: all 0.3s;
+        }
+        .lang-btn:hover {
+            background-color: #d5dbdb;
+        }
+        .lang-btn.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+
+        /* Content Styles */
         h1 {
             color: #2c3e50;
             border-bottom: 2px solid #3498db;
@@ -23,11 +52,17 @@
             color: #2980b9;
             margin-top: 30px;
         }
+        h3 {
+            color: #2c3e50;
+            margin-top: 20px;
+            font-size: 1.1em;
+        }
         p {
             margin-bottom: 15px;
         }
         ul {
             margin-bottom: 15px;
+            padding-left: 20px;
         }
         li {
             margin-bottom: 5px;
@@ -45,52 +80,72 @@
             color: #7f8c8d;
             border-top: 1px solid #ddd;
             padding-top: 20px;
+            text-align: center;
+        }
+        
+        /* Helper to hide/show */
+        .hidden {
+            display: none;
         }
     </style>
+    <script>
+        function setLanguage(lang) {
+            // Hide both
+            document.getElementById('content-en').classList.add('hidden');
+            document.getElementById('content-tr').classList.add('hidden');
+            
+            // Remove active class from buttons
+            document.getElementById('btn-en').classList.remove('active');
+            document.getElementById('btn-tr').classList.remove('active');
+
+            // Show selected
+            document.getElementById('content-' + lang).classList.remove('hidden');
+            document.getElementById('btn-' + lang).classList.add('active');
+        }
+    </script>
 </head>
 <body>
 
-    <h1>Privacy Policy</h1>
-    <p><strong>Last Updated:</strong> <script>document.write(new Date().toLocaleDateString());</script></p>
-
-    <p>This privacy policy explains how the <strong>YKS Sıralamam</strong> mobile application ("the App") collects, uses, and protects user data. By downloading and using the App, you agree to the terms of this policy.</p>
-
-    <h2>1. Information Collection</h2>
-    <p>The App does not collect personally identifiable information (such as your name, physical address, or phone number) directly. We strive to collect only the minimum amount of data necessary to provide our services and improve user experience.</p>
-
-    <h3>Automatically Collected Information</h3>
-    <p>We may collect certain information automatically, including, but not limited to, the type of mobile device you use, your mobile operating system, and information about the way you use the App (e.g., crash logs).</p>
-
-    <h2>2. Third-Party Services and Ads (AdMob)</h2>
-    <p>The App uses <strong>Google AdMob</strong> to display advertisements. This allows us to offer the App for free.</p>
-    <p>Google AdMob may use technologies such as cookies and Advertising IDs to serve ads based on your interests. This data is collected and processed by Google.</p>
-    <ul>
-        <li>For more information on how Google uses data, please visit: <a href="https://policies.google.com/technologies/partner-sites" target="_blank">Google Privacy & Terms</a></li>
-    </ul>
-
-    <h2>3. Data Sources and Disclaimer</h2>
-    <p>The university ranking data, base points, and quota information presented in this App are compiled from publicly available data published by the <strong>Council of Higher Education (YÖK) Atlas</strong> and <strong>ÖSYM</strong> (Measurement, Selection and Placement Center).</p>
-    <ul>
-        <li>This App is <strong>not officially affiliated</strong> with YÖK or ÖSYM.</li>
-        <li>The data is provided for informational purposes only. While we strive for accuracy, users should always refer to the official ÖSYM guides and resources for official preferences and decisions. The developer is not liable for any errors or omissions in the data.</li>
-    </ul>
-
-    <h2>4. Security</h2>
-    <p>We value your trust in providing us with your information, thus we are striving to use commercially acceptable means of protecting it. But remember that no method of transmission over the internet, or method of electronic storage is 100% secure and reliable, and we cannot guarantee its absolute security.</p>
-
-    <h2>5. Children’s Privacy</h2>
-    <p>These Services do not address anyone under the age of 13. We do not knowingly collect personally identifiable information from children under 13. In the case we discover that a child under 13 has provided us with personal information, we immediately delete this from our servers.</p>
-
-    <h2>6. Changes to This Privacy Policy</h2>
-    <p>We may update our Privacy Policy from time to time. Thus, you are advised to review this page periodically for any changes. These changes are effective immediately after they are posted on this page.</p>
-
-    <h2>7. Contact Us</h2>
-    <p>If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at:</p>
-    <p><strong>Email:</strong> berkaykopuz@hotmail.com</p>
-
-    <div class="footer">
-        <p>&copy; S7studios. All rights reserved.</p>
+    <div class="lang-switch">
+        <button id="btn-en" class="lang-btn active" onclick="setLanguage('en')">English</button>
+        <button id="btn-tr" class="lang-btn" onclick="setLanguage('tr')">Türkçe</button>
     </div>
 
-</body>
-</html>
+    <div id="content-en">
+        <h1>Privacy Policy</h1>
+        <p><strong>Last Updated:</strong> <script>document.write(new Date().toLocaleDateString('en-US'));</script></p>
+
+        <p>This privacy policy explains how the <strong>YKS Sıralamam</strong> mobile application ("the App") collects, uses, and protects user data. By downloading and using the App, you agree to the terms of this policy.</p>
+
+        <h2>1. Information Collection</h2>
+        <p>The App does not collect personally identifiable information (such as your name, physical address, or phone number) directly. We strive to collect only the minimum amount of data necessary to provide our services and improve user experience.</p>
+
+        <h3>Automatically Collected Information</h3>
+        <p>We may collect certain information automatically, including, but not limited to, the type of mobile device you use, your mobile operating system, and information about the way you use the App (e.g., crash logs).</p>
+
+        <h2>2. Third-Party Services and Ads (AdMob)</h2>
+        <p>The App uses <strong>Google AdMob</strong> to display advertisements. This allows us to offer the App for free.</p>
+        <p>Google AdMob may use technologies such as cookies and Advertising IDs to serve ads based on your interests. This data is collected and processed by Google.</p>
+        <ul>
+            <li>For more information on how Google uses data, please visit: <a href="https://policies.google.com/technologies/partner-sites" target="_blank">Google Privacy & Terms</a></li>
+        </ul>
+
+        <h2>3. Data Sources and Disclaimer</h2>
+        <p>The university ranking data, base points, and quota information presented in this App are compiled from publicly available data published by the <strong>Council of Higher Education (YÖK) Atlas</strong> and <strong>ÖSYM</strong> (Measurement, Selection and Placement Center).</p>
+        <ul>
+            <li>This App is <strong>not officially affiliated</strong> with YÖK or ÖSYM.</li>
+            <li>The data is provided for informational purposes only. While we strive for accuracy, users should always refer to the official ÖSYM guides and resources for official preferences and decisions. The developer is not liable for any errors or omissions in the data.</li>
+        </ul>
+
+        <h2>4. Security</h2>
+        <p>We value your trust in providing us with your information, thus we are striving to use commercially acceptable means of protecting it. But remember that no method of transmission over the internet, or method of electronic storage is 100% secure and reliable, and we cannot guarantee its absolute security.</p>
+
+        <h2>5. Children’s Privacy</h2>
+        <p>These Services do not address anyone under the age of 13. We do not knowingly collect personally identifiable information from children under 13. In the case we discover that a child under 13 has provided us with personal information, we immediately delete this from our servers.</p>
+
+        <h2>6. Changes to This Privacy Policy</h2>
+        <p>We may update our Privacy Policy from time to time. Thus, you are advised to review this page periodically for any changes. These changes are effective immediately after they are posted on this page.</p>
+
+        <h2>7. Contact Us</h2>
+        <p>If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at:</p>
+        <p><strong>Email:</strong> berkaykopuz@hotmail

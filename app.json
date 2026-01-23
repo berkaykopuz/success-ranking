@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.berkaykopuz1.successranking",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -52,7 +52,7 @@
         "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-7326975715449797~4890783806",
-          "iosAppId": "ca-app-pub-7326975715449797~4890783806"
+          "iosAppId": "ca-app-pub-7326975715449797~2336891164"
         }
       ],
       "expo-sqlite"

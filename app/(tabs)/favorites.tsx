@@ -12,6 +12,7 @@ import {
     Alert,
     ScrollView,
     Dimensions,
+    Platform,
 } from 'react-native';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,7 +25,10 @@ import { estimateRanking } from '../../src/api/rankings';
 
 const BANNER_AD_UNIT_ID = __DEV__
     ? TestIds.BANNER
-    : 'ca-app-pub-7326975715449797/6012293782';
+    : Platform.select({
+        ios: 'ca-app-pub-7326975715449797/5884759096', // Replace with your iOS banner ad unit ID
+        android: 'ca-app-pub-7326975715449797/6012293782',
+      }) || 'ca-app-pub-7326975715449797/6012293782';
 
 type ViewMode = 'main' | 'lists' | 'listDetail' | 'pastScores' | 'calculationDetail' | 'netFormStatus';
 

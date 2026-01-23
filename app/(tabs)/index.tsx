@@ -2,7 +2,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useMemo } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 import { fetchRankings } from '../../src/api/rankings';
@@ -14,7 +14,10 @@ import { RankingItem } from '../../src/types/ranking';
 
 const BANNER_AD_UNIT_ID = __DEV__
   ? TestIds.BANNER
-  : 'ca-app-pub-7326975715449797/6012293782';
+  : Platform.select({
+      ios: 'ca-app-pub-7326975715449797/5884759096', // Replace with your iOS banner ad unit ID
+      android: 'ca-app-pub-7326975715449797/6012293782',
+    }) || 'ca-app-pub-7326975715449797/6012293782';
 
 export default function RankingScreen() {
   const insets = useSafeAreaInsets();
