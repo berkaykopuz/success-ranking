@@ -19,7 +19,10 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.berkaykopuz1.successranking",
-      "appName": "YKS Sıralamam"
+      "appName": "YKS Sıralamam",
+      "permissions": [
+        "com.google.android.gms.permission.AD_ID"
+      ]
     },
     "web": {
       "output": "static",
